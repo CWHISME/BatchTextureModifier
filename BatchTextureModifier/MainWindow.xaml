@@ -1,0 +1,114 @@
+﻿<Window x:Class="BatchTextureModifier.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BatchTextureModifier"
+        xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+        mc:Ignorable="d"
+        Title="批量图片处理器(BatchTextureConverter)" MaxHeight="600" MaxWidth="800" MinWidth="800" MinHeight="600" ResizeMode="CanMinimize">
+    <Window.Resources>
+        <local:MultiContentConverter x:Key="MultiContentConverter" />
+    </Window.Resources>
+    <Border BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1">
+        <StackPanel Background="#FFECECEC">
+            <GroupBox Header="设置"  BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1" VerticalAlignment="Top">
+                <Grid>
+                    <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Label x:Name="label" Content="原始目录：" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25"/>
+                            <TextBox x:Name="TexturesInputPathText" Text="{Binding InputPath}" VerticalAlignment="Top" Height="25" Width="480" TextAlignment="Left" VerticalContentAlignment="Center" />
+                            <Button x:Name="ChooseInputPathBtn" Content="选择" HorizontalAlignment="Left" Margin="10,0,0,0" Height="25" Click="ChooseInputPathBtn_Click"/>
+                            <Button x:Name="OpenInputPathBtn" Content="打开" IsEnabled="{Binding HasExistInputPath}" HorizontalAlignment="Left" Margin="10,0,0,0" Height="25" Click="OpenInputPathBtn_Click"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Label Content="输出目录：" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25"/>
+                            <TextBox x:Name="TexturesOutputPathText" Text="{Binding OutputPath}" VerticalAlignment="Top" Height="25" Width="480" TextAlignment="Left" VerticalContentAlignment="Center"/>
+                            <Button x:Name="ChooseOutputPathBtn" Content="选择" HorizontalAlignment="Left"  Margin="10,0,0,0"  Height="25" Click="ChooseOutputPathBtn_Click" />
+                            <Button x:Name="OpenOutputPathBtn" IsEnabled="{Binding HasExistOutputPath}" Content="打开" HorizontalAlignment="Left"  Margin="10,0,0,0"  Height="25" Click="OpenOutputPathBtn_Click" />
+                        </StackPanel>
+                        <GroupBox Header="参数设置" Margin="0,10,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <GroupBox Header="输出格式：">
+                                    <StackPanel Orientation="Horizontal" Height="26">
+                                        <CheckBox Name="StayInputFormatToggle" IsChecked="True" Content="保留原格式" Height="26" ToolTipService.InitialShowDelay="0" ToolTip="在处理完毕后，保存的图片与输入格式保持一致。例如修改前是 *.png，修改后也是 *.png。" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
+                                        <ComboBox Name="OutputFormatComboBox" ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}" Visibility="{c:Binding ElementName=StayInputFormatToggle,Path=!IsChecked,FalseToVisibility=Collapsed}" Width="80" Margin="5,0,0,0" VerticalContentAlignment="Center" />
+                                    </StackPanel>
+                                </GroupBox>
+                                <GroupBox Header="缩放模式：">
+                                    <StackPanel Orientation="Horizontal" Height="26">
+                                        <ComboBox Name="ScaleComboBox" ItemsSource="{Binding ScaleModes}" SelectedIndex="{Binding ScaleModeIndex}" Width="80" ToolTipService.InitialShowDelay="0" VerticalContentAlignment="Center">
+                                            <ComboBox.ToolTip>
+                                                <StackPanel Orientation="Vertical">
+                                                    <TextBlock Text="拉伸：直接缩放，会有拉伸"/>
+                                                    <TextBlock Text="比例缩放：不足之处使用透明度填充"/>
+                                                    <TextBlock Text="裁剪：不足处直接裁剪"/>
+                                                </StackPanel>
+                                            </ComboBox.ToolTip>
+                                        </ComboBox>
+                                        <StackPanel Name="ScaleParamsPanel" Orientation="Horizontal" Visibility="{c:Binding 'ScaleModeIndex>0',FalseToVisibility=Collapsed}">
+                                            <Label Content="宽" Margin="0,0,0,0"/>
+                                            <TextBox Name="ScaleWidth" Text="{Binding Width}" Width="80"  VerticalContentAlignment="Center" PreviewTextInput="OnPreviewTextInputLimitNumber" InputScope="Number" TextChanged="ScaleWidth_TextChanged"/>
+                                            <Label Content="高" Margin="0,0,0,0"/>
+                                            <TextBox Name="ScaleHeight" Text="{Binding Height}" Width="80" VerticalContentAlignment="Center" PreviewTextInput="OnPreviewTextInputLimitNumber" InputScope="Number" TextChanged="ScaleHeight_TextChanged"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+                                <GroupBox Header="文件设置：">
+                                    <StackPanel Orientation="Horizontal" Height="26">
+                                        <CheckBox Content="直接覆盖" ToolTipService.InitialShowDelay="0" ToolTip="该选项会直接覆盖源文件，并将源文件备份至『输出目录』" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="20,0,0,0"/>
+                                    </StackPanel>
+                                </GroupBox>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                    <Button x:Name="DoProcessBtn" Content="处理" HorizontalAlignment="Right" VerticalAlignment="Top" Height="60" Width="100" Margin="0,10,10,30" FontSize="16" Click="DoProcessBtn_Click"/>
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="结果"  BorderBrush="Black" Margin="5,0,5,5" BorderThickness="1,1,1,1" VerticalAlignment="Top" Height="365">
+                <TabControl x:Name="OutPutTabControl">
+                    <TabItem Header="预览">
+                        <DockPanel Background="White" >
+                            <GroupBox Header="原图"  Width="{c:Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DockPanel}, Path=ActualWidth/2-10}" BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1" >
+                                <Grid>
+                                    <Image Name="PreviewOriginImage"  Source="{Binding PreviewInputBitmap}" Stretch="Uniform" />
+                                    <Label Visibility="{Binding PreviewImageVisibility}">
+                                        <MultiBinding  Converter="{StaticResource MultiContentConverter}" ConverterParameter="分辨率：{0}x{1}">
+                                            <Binding Path="Width"/>
+                                            <Binding Path="Height"/>
+                                        </MultiBinding>
+                                    </Label>
+                                    <!--<Label Content="aaaaaaaaaaaa"></Label>-->
+                                </Grid>
+                            </GroupBox>
+                            <GroupBox Header="结果"  BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1">
+                                <Grid>
+                                    <!--<Viewbox>-->
+                                    <!--<Border BorderThickness="1" BorderBrush="Red">-->
+                                    <Image Name="PreviewOutputImage" Source="{Binding PreviewOutputBitmap}" Stretch="Uniform" />
+                                    <Label Visibility="{Binding PreviewImageVisibility}">
+                                        <MultiBinding  Converter="{StaticResource MultiContentConverter}" ConverterParameter="分辨率：{0}x{1}">
+                                            <Binding Path="Width"/>
+                                            <Binding Path="Height"/>
+                                        </MultiBinding>
+                                    </Label>
+                                    <!--</Border>-->
+                                    <!--</Viewbox>-->
+                                </Grid>
+                            </GroupBox>
+                        </DockPanel>
+                    </TabItem>
+                    <TabItem Header="输出">
+                        <Grid Background="White">
+                            <ListBox x:Name="ResultListBox" d:ItemsSource="{d:SampleData ItemCount=5}"/>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </GroupBox>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock  Name="AboutBtn" Text="Made by wangjiaying" TextDecorations="Underline" MouseDown="AboutBtn_Click"   />
+                <TextBlock  Name="OpensourceBtn" Text="(Git)" TextDecorations="Underline" MouseDown="OpensourceBtn_Click"  Margin="0,0,5,0" Foreground="Blue"  />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
