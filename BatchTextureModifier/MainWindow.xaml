@@ -6,9 +6,17 @@
         xmlns:local="clr-namespace:BatchTextureModifier"
         xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
         mc:Ignorable="d"
-        Title="批量图片处理器(BatchTextureConverter)" MaxHeight="600" MaxWidth="800" MinWidth="800" MinHeight="600" ResizeMode="CanMinimize">
+        Title="批量图片处理器(BatchTextureModifier)"  MinWidth="800" MinHeight="650" ResizeMode="CanMinimize" MaxWidth="{Binding RelativeSource={RelativeSource Mode=Self},Path=MinWidth}" MaxHeight="{Binding RelativeSource={RelativeSource Mode=Self},Path=MinHeight}" >
     <Window.Resources>
         <local:MultiContentConverter x:Key="MultiContentConverter" />
+        <Style TargetType="ComboBox">
+            <Setter Property="ToolTipService.InitialShowDelay" 
+            Value="{Binding TooTipsTime}"/>
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="ToolTipService.InitialShowDelay" 
+            Value="{Binding TooTipsTime}"/>
+        </Style>
     </Window.Resources>
     <Border BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1">
         <StackPanel Background="#FFECECEC">
@@ -31,32 +39,38 @@
                             <StackPanel Orientation="Horizontal">
                                 <GroupBox Header="输出格式：">
                                     <StackPanel Orientation="Horizontal" Height="26">
-                                        <CheckBox Name="StayInputFormatToggle" IsChecked="True" Content="保留原格式" Height="26" ToolTipService.InitialShowDelay="0" ToolTip="在处理完毕后，保存的图片与输入格式保持一致。例如修改前是 *.png，修改后也是 *.png。" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
+                                        <CheckBox Name="StayInputFormatToggle" IsChecked="True" Content="保留原格式" Height="26"  ToolTip="{Binding StayInputFormatTips}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
                                         <ComboBox Name="OutputFormatComboBox" ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}" Visibility="{c:Binding ElementName=StayInputFormatToggle,Path=!IsChecked,FalseToVisibility=Collapsed}" Width="80" Margin="5,0,0,0" VerticalContentAlignment="Center" />
                                     </StackPanel>
                                 </GroupBox>
                                 <GroupBox Header="缩放模式：">
                                     <StackPanel Orientation="Horizontal" Height="26">
-                                        <ComboBox Name="ScaleComboBox" ItemsSource="{Binding ScaleModes}" SelectedIndex="{Binding ScaleModeIndex}" Width="80" ToolTipService.InitialShowDelay="0" VerticalContentAlignment="Center">
+                                        <ComboBox Name="ScaleComboBox" ItemsSource="{Binding ScaleModes}" SelectedIndex="{Binding ScaleModeIndex}" Width="80"  VerticalContentAlignment="Center">
                                             <ComboBox.ToolTip>
-                                                <StackPanel Orientation="Vertical">
-                                                    <TextBlock Text="拉伸：直接缩放，会有拉伸"/>
+                                                <!--<StackPanel Orientation="Vertical">-->
+                                                <ListBox ItemsSource="{Binding LangScaleModeTips}"/>
+                                                <!--<TextBlock Text="拉伸：直接缩放，会有拉伸"/>
                                                     <TextBlock Text="比例缩放：不足之处使用透明度填充"/>
-                                                    <TextBlock Text="裁剪：不足处直接裁剪"/>
-                                                </StackPanel>
+                                                    <TextBlock Text="裁剪：不足处直接裁剪"/>-->
+                                                <!--</StackPanel>-->
                                             </ComboBox.ToolTip>
                                         </ComboBox>
-                                        <StackPanel Name="ScaleParamsPanel" Orientation="Horizontal" Visibility="{c:Binding 'ScaleModeIndex>0',FalseToVisibility=Collapsed}">
+                                        <StackPanel Name="ScaleParamsPanel" Orientation="Horizontal" Visibility="{c:Binding ShowPixelSetting,FalseToVisibility=Collapsed}">
                                             <Label Content="宽" Margin="0,0,0,0"/>
                                             <TextBox Name="ScaleWidth" Text="{Binding Width}" Width="80"  VerticalContentAlignment="Center" PreviewTextInput="OnPreviewTextInputLimitNumber" InputScope="Number" TextChanged="ScaleWidth_TextChanged"/>
                                             <Label Content="高" Margin="0,0,0,0"/>
                                             <TextBox Name="ScaleHeight" Text="{Binding Height}" Width="80" VerticalContentAlignment="Center" PreviewTextInput="OnPreviewTextInputLimitNumber" InputScope="Number" TextChanged="ScaleHeight_TextChanged"/>
                                         </StackPanel>
+                                        <StackPanel  Orientation="Horizontal" Visibility="{c:Binding 'ScaleModeIndex>0',FalseToVisibility=Collapsed}">
+                                            <Label Content="缩放算法:" Margin="0,0,0,0"/>
+                                            <ComboBox ItemsSource="{Binding ResamplerAlgorithmNames}" SelectedIndex="{Binding ResamplerAlgorithmIndex}" MinWidth="80" ToolTip="{Binding LangResamplerAlgorithmTips}" VerticalContentAlignment="Center"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </GroupBox>
                                 <GroupBox Header="文件设置：">
                                     <StackPanel Orientation="Horizontal" Height="26">
-                                        <CheckBox Content="直接覆盖" ToolTipService.InitialShowDelay="0" ToolTip="该选项会直接覆盖源文件，并将源文件备份至『输出目录』" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="20,0,0,0"/>
+                                        <CheckBox Content="直接覆盖" IsChecked="{Binding IsDirectOverideFile}" ToolTip="{Binding LangOverideTips}" VerticalAlignment="Center" VerticalContentAlignment="Center" />
+                                        <CheckBox Content="备份文件" Visibility="{c:Binding IsDirectOverideFile,FalseToVisibility=Collapsed}" IsChecked="{Binding IsBackupInputFile}" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="5,0,0,0"/>
                                     </StackPanel>
                                 </GroupBox>
                             </StackPanel>
@@ -69,13 +83,15 @@
                 <TabControl x:Name="OutPutTabControl">
                     <TabItem Header="预览">
                         <DockPanel Background="White" >
-                            <GroupBox Header="原图"  Width="{c:Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DockPanel}, Path=ActualWidth/2-10}" BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1" >
+                            <GroupBox Header="原图" Visibility="{c:Binding ElementName=JustDisplayResultCheck,Path=!IsChecked,FalseToVisibility=Collapsed}"  Width="{c:Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DockPanel}, Path=(ActualWidth/2-10)}" BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1" >
                                 <Grid>
-                                    <Image Name="PreviewOriginImage"  Source="{Binding PreviewInputBitmap}" Stretch="Uniform" />
-                                    <Label Visibility="{Binding PreviewImageVisibility}">
+                                    <Border BorderThickness="1" BorderBrush="Red" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image Name="PreviewOriginImage" Source="{Binding PreviewInputBitmap}" Stretch="Uniform" />
+                                    </Border>
+                                    <Label Visibility="{Binding PreviewImageVisibility}" Foreground="MediumPurple">
                                         <MultiBinding  Converter="{StaticResource MultiContentConverter}" ConverterParameter="分辨率：{0}x{1}">
-                                            <Binding Path="Width"/>
-                                            <Binding Path="Height"/>
+                                            <Binding ElementName="PreviewOriginImage" Path="Source.PixelWidth"/>
+                                            <Binding ElementName="PreviewOriginImage" Path="Source.PixelHeight"/>
                                         </MultiBinding>
                                     </Label>
                                     <!--<Label Content="aaaaaaaaaaaa"></Label>-->
@@ -85,15 +101,19 @@
                                 <Grid>
                                     <!--<Viewbox>-->
                                     <!--<Border BorderThickness="1" BorderBrush="Red">-->
-                                    <Image Name="PreviewOutputImage" Source="{Binding PreviewOutputBitmap}" Stretch="Uniform" />
-                                    <Label Visibility="{Binding PreviewImageVisibility}">
+                                    <Border BorderThickness="1" BorderBrush="Red" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image Name="PreviewOutputImage" Source="{Binding PreviewOutputBitmap}" Stretch="Uniform" />
+                                    </Border>
+                                    <Label Visibility="{Binding PreviewImageVisibility}" Foreground="MediumPurple">
                                         <MultiBinding  Converter="{StaticResource MultiContentConverter}" ConverterParameter="分辨率：{0}x{1}">
                                             <Binding Path="Width"/>
                                             <Binding Path="Height"/>
                                         </MultiBinding>
                                     </Label>
+                                    <CheckBox Name="JustDisplayResultCheck" Content="仅显示结果" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,0,0" VerticalContentAlignment="Center"/>
                                     <!--</Border>-->
                                     <!--</Viewbox>-->
+                                    <Button Name="OpenImageCompareViewBtn" Content="放大" Width="30" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="OpenImageCompareViewBtn_Click"/>
                                 </Grid>
                             </GroupBox>
                         </DockPanel>
@@ -106,8 +126,8 @@
                 </TabControl>
             </GroupBox>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <TextBlock  Name="AboutBtn" Text="Made by wangjiaying" TextDecorations="Underline" MouseDown="AboutBtn_Click"   />
-                <TextBlock  Name="OpensourceBtn" Text="(Git)" TextDecorations="Underline" MouseDown="OpensourceBtn_Click"  Margin="0,0,5,0" Foreground="Blue"  />
+                <TextBlock  Name="AboutBtn" Text="Made by wangjiaying" ToolTip="点我 (‾◡◝)" TextDecorations="Underline" MouseDown="AboutBtn_Click"   />
+                <TextBlock  Name="OpensourceBtn" Text="(Git)" ToolTip="点点点... ᓚᘏᗢ" TextDecorations="Underline" MouseDown="OpensourceBtn_Click"  Margin="0,0,5,0" Foreground="Blue"  />
             </StackPanel>
         </StackPanel>
     </Border>

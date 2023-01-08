@@ -7,6 +7,8 @@
     <UseWPF>true</UseWPF>
     <IsPublishable>True</IsPublishable>
     <UseWindowsForms>true</UseWindowsForms>
+    <Copyright>Made by wangjiaying</Copyright>
+    <RepositoryUrl>https://github.com/CWHISME/BatchTextureModifier.git</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

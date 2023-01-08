@@ -7,8 +7,11 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Tga;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Transforms;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Windows;
 
 namespace BatchTextureModifier
@@ -16,7 +19,13 @@ namespace BatchTextureModifier
     public static class TexturesModifyUtility
     {
 
+        /// <summary>
+        /// 格式
+        /// </summary>
         public readonly static string[] Filter = new string[] { "*.png", "*.jpg", "*.webp", "*.tga", "*.bmp", "*.gif" };
+        /// <summary>
+        /// 编码器
+        /// </summary>
         public readonly static IImageEncoder[] _encoder = new IImageEncoder[] {
             new JpegEncoder(),
             new PngEncoder(),
@@ -25,6 +34,45 @@ namespace BatchTextureModifier
             new BmpEncoder(),
             new GifEncoder()
         };
+        /// <summary>
+        /// 缩放算法
+        /// </summary>
+        public readonly static List<IResampler> ResamplerAlgorithms;
+        /// <summary>
+        /// 缩放算法对应的名字
+        /// </summary>
+        public readonly static List<string> ResamplerAlgorithmNames;
+        //public readonly static IResampler[] ResamplerAlgorithms = new IResampler[] {
+        //    KnownResamplers.Bicubic,
+        //    KnownResamplers.Box,
+        //    KnownResamplers.CatmullRom,
+        //    KnownResamplers.Hermite,
+        //    KnownResamplers.Lanczos2,
+        //    KnownResamplers.Lanczos3,
+        //    KnownResamplers.Lanczos5,
+        //    KnownResamplers.Lanczos8,
+        //    KnownResamplers.MitchellNetravali,
+        //    KnownResamplers.NearestNeighbor,
+        //    KnownResamplers.Robidoux,
+        //    KnownResamplers.RobidouxSharp,
+        //    KnownResamplers.Spline,
+        //    KnownResamplers.Triangle,
+        //    KnownResamplers.Welch,
+        //};
+
+        static TexturesModifyUtility()
+        {
+            PropertyInfo[] prt = typeof(SixLabors.ImageSharp.Processing.KnownResamplers).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            ResamplerAlgorithms = new List<IResampler>(prt.Length);
+            ResamplerAlgorithmNames = new List<string>(prt.Length);
+            foreach (var item in prt)
+            {
+                IResampler resampler = item.GetValue(null) as IResampler;
+                if (resampler == null) continue;
+                ResamplerAlgorithms.Add(resampler);
+                ResamplerAlgorithmNames.Add(item.Name);
+            }
+        }
 
         /// <summary>
         /// 获取目录下第一张图片
@@ -74,16 +122,48 @@ namespace BatchTextureModifier
 
         public static byte[] ResizeTextures(byte[] bytes, TexturesModifyData data)
         {
+            if (data.ScaleMode == EScaleMode.NotScale && data.OutputFormat == null) return bytes;
             using (Image image = Image.Load(bytes))
             {
-                image.Mutate(x => x.Resize(data.Width, data.Height));
+                switch (data.ScaleMode)
+                {
+                    case EScaleMode.NotScale:
+                        break;
+                    case EScaleMode.DirectScale:
+                        image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm));
+                        break;
+                    case EScaleMode.ScaleBased:
+                        image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, 0, data.Width, data.Height), false));
+                        break;
+                    case EScaleMode.ScaleBasedByCut:
+
+                        break;
+                    case EScaleMode.WidthBase:
+                        break;
+                    case EScaleMode.HeightBase:
+
+                        break;
+                    case EScaleMode.Fill:
+                        break;
+                    case EScaleMode.POT:
+                        break;
+                    case EScaleMode.Max:
+                        break;
+                    default:
+                        break;
+                }
                 using (MemoryStream ms = new MemoryStream())
                 {
-                    image.Save(ms, Image.DetectFormat(bytes));
+                    //检测是原格式还是转换格式
+                    if (data.OutputFormat == null)
+                        image.Save(ms, Image.DetectFormat(bytes));
+                    else
+                        image.Save(ms, data.OutputFormat);
                     return ms.ToArray();
                 }
                 //image.Save(Path.Combine(Path.GetDirectoryName(path), "[Resize]" + Path.GetFileName(path)));
             }
         }
+
     }
 }

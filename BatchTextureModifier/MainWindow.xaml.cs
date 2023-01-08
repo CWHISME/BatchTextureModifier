@@ -26,6 +26,9 @@ namespace BatchTextureModifier
 
         private ViewHelper _helper;
 
+        private ImageCompareViewWindow _imageCompareView;
+        private WindowState _imageCompareViewState;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -150,6 +153,22 @@ namespace BatchTextureModifier
         {
             //_helper.ConvertData.Height = _helper.CheckTextNumberInput(ScaleHeight);
             //_helper.PreviewOutputImage(PreviewOutputImage);
+        }
+
+        private void OpenImageCompareViewBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (_imageCompareView == null)
+            {
+                _imageCompareView = new ImageCompareViewWindow();
+                _imageCompareView.DataContext = _helper;
+                _imageCompareView.Closed += (o, x) => _imageCompareView = null;
+                _imageCompareView.StateChanged += (o, x) => _imageCompareViewState = (o as Window).WindowState == WindowState.Minimized ? _imageCompareViewState : (o as Window).WindowState;
+                _imageCompareViewState = _imageCompareView.WindowState;
+                _imageCompareView.Show();
+                return;
+            }
+            _imageCompareView.WindowState = _imageCompareViewState;
+            _imageCompareView.Activate();
         }
     }
 }
