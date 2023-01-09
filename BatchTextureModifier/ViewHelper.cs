@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -35,13 +36,13 @@ namespace BatchTextureModifier
         public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputFormat = TexturesModifyUtility.GetFormatByIndex(value); } }
 
         //缩放模式
-        private string[] _scaleModes = new string[] { "不缩放", "直接缩放", "比例缩放", "比例裁剪", "基于宽度", "基于高度", "填充缩放", "POT缩放" };
+        private string[] _scaleModes;// = new string[] { "不缩放", "直接缩放", "比例缩放", "直接裁剪", "比例裁剪", "基于宽度", "基于高度", "填充缩放", "POT缩放" };
         public string[] ScaleModes { get { return _scaleModes; } }
         //分辨率设置是否显示
         public bool ShowPixelSetting { get { return _convertData.ScaleMode != EScaleMode.NotScale && _convertData.ScaleMode != EScaleMode.POT; } }
         //选择的缩放模式下标
         private int _scaleModeIndex;
-        public int ScaleModeIndex { get { return _scaleModeIndex; } set { _scaleModeIndex = value; _convertData.ScaleMode = (EScaleMode)value; Notify("ScaleModeIndex", "ShowPixelSetting"); PreviewOutputImage(); } }
+        public int ScaleModeIndex { get { return _scaleModeIndex; } set { _scaleModeIndex = value; _convertData.ScaleMode = (EScaleMode)value; Notify("ScaleModeIndex", "ShowPixelSetting", "Width", "Height"); PreviewOutputImage(); } }
         //缩放算法
         //private string[] _resamplerAlgorithmNames;
         public List<string> ResamplerAlgorithmNames { get { return TexturesModifyUtility.ResamplerAlgorithmNames; } }
@@ -73,32 +74,23 @@ namespace BatchTextureModifier
         public string StayInputFormatTips { get { return "在处理完毕后，保存的图片与输入格式保持一致。例如修改前是 *.png，修改后也是 *.png"; } }
         public string LangResamplerAlgorithmTips { get { return "缩放算法将会影响图片的缩放质量，默认 Bicubic 就不错，如果想要更好的效果可以选 Lanczos8(但是更慢)"; } }
         public string LangOverideTips { get { return "该选项会直接覆盖源文件，并将源文件备份至『输出目录』"; } }
-        public string[] LangScaleModeTips
-        {
-            get
-            {
-                return new[] {
-                    "不缩放：不会改变原本分辨率，如果你连格式也选择保持不变，那么就没什么用",
-                    "直接缩放：直接缩放为设置的分辨率，不足之处直接拉伸，会造成变形",
-                    "比例缩放：将原图缩放至指定分辨率时尽量保持比例不变，多余处填充透明度",
-                    "比例裁剪：以高度或宽度最大者为基准进行缩放，尽量保持比例不变，多余处直接裁剪",
-                    "基于宽度：以宽度为基准进行缩放，高度不足则以透明度填充，高度超过之处则裁剪",
-                    "基于高度：以高度为基准进行缩放，宽度不足则以透明度填充，宽度超过之处则裁剪",
-                    "填充缩放：如果图片小于设定分辨率，则不改变图片原有像素大小，不足之处以透明度填充；如果图片大于设定分辨率，则比例缩放",
-                    "POT缩放：高宽缩放至最接近2N次方的分辨率，尽量保持比例不变，不足处进行透明度填充",
-                };
-            }
-        }
+        private string[] _langScaleModeTips;
+        public string[] LangScaleModeTips { get { return _langScaleModeTips; } }
         #endregion
 
-        //public ViewHelper()
-        //{
-        //    _resamplerAlgorithmNames = new string[TexturesModifyUtility.ResamplerAlgorithms.Length];
-        //    for (int i = 0; i < _resamplerAlgorithmNames.Length; i++)
-        //    {
-        //        _resamplerAlgorithmNames[i] = TexturesModifyUtility.ResamplerAlgorithms[i].GetType().Name.Replace("Resampler", "");
-        //    }
-        //}
+        public ViewHelper()
+        {
+            _scaleModes = new string[(int)EScaleMode.Max];
+            _langScaleModeTips = new string[_scaleModes.Length];
+            Type scaleModeType = typeof(EScaleMode);
+            for (int i = 0; i < _scaleModes.Length; i++)
+            {
+                EScaleMode mode = (EScaleMode)i;
+                _scaleModes[i] = mode.ToString();
+                DescriptionAttribute des = scaleModeType.GetField(_scaleModes[i]).GetCustomAttribute<System.ComponentModel.DescriptionAttribute>();
+                _langScaleModeTips[i] = des?.Description;
+            }
+        }
 
         #region 绑定通知
         private event PropertyChangedEventHandler? PropertyChanged;

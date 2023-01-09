@@ -106,8 +106,8 @@
                                     </Border>
                                     <Label Visibility="{Binding PreviewImageVisibility}" Foreground="MediumPurple">
                                         <MultiBinding  Converter="{StaticResource MultiContentConverter}" ConverterParameter="分辨率：{0}x{1}">
-                                            <Binding Path="Width"/>
-                                            <Binding Path="Height"/>
+                                            <Binding ElementName="PreviewOutputImage" Path="Source.PixelWidth"/>
+                                            <Binding ElementName="PreviewOutputImage" Path="Source.PixelHeight"/>
                                         </MultiBinding>
                                     </Label>
                                     <CheckBox Name="JustDisplayResultCheck" Content="仅显示结果" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,0,0" VerticalContentAlignment="Center"/>

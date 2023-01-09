@@ -125,25 +125,37 @@ namespace BatchTextureModifier
             if (data.ScaleMode == EScaleMode.NotScale && data.OutputFormat == null) return bytes;
             using (Image image = Image.Load(bytes))
             {
+                ResizeOptions opt;
                 switch (data.ScaleMode)
                 {
                     case EScaleMode.NotScale:
                         break;
-                    case EScaleMode.DirectScale:
-                        image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm));
+                    case EScaleMode.DirectScale_Min:
+                        ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Min);
+                        break;
+                    case EScaleMode.DirectScale_Max:
+                        ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Max);
+                        break;
+                    case EScaleMode.StretchScale:
+                        ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Stretch);
                         break;
                     case EScaleMode.ScaleBased:
-                        image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, 0, data.Width, data.Height), false));
+                        ResizeByScaleBased(data, image);
+                        break;
+                    case EScaleMode.DirectCut:
+                        image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, 0, image.Width, image.Height), false));
                         break;
                     case EScaleMode.ScaleBasedByCut:
-
+                        ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Crop);
                         break;
                     case EScaleMode.WidthBase:
+
                         break;
                     case EScaleMode.HeightBase:
 
                         break;
                     case EScaleMode.Fill:
+                        ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.BoxPad);
                         break;
                     case EScaleMode.POT:
                         break;
@@ -165,5 +177,41 @@ namespace BatchTextureModifier
             }
         }
 
+        private static void ResizeByMode(TexturesModifyData data, Image image, SixLabors.ImageSharp.Processing.ResizeMode mode)
+        {
+            ResizeOptions opt = new ResizeOptions();
+            opt.Position = AnchorPositionMode.Center;
+            opt.Sampler = data.ResamplerAlgorithm;
+            opt.Size = new SixLabors.ImageSharp.Size(data.Width, data.Height);
+            opt.Mode = mode;
+            image.Mutate(x => x.Resize(opt));
+        }
+
+        private static void ResizeByScaleBased(TexturesModifyData data, Image image)
+        {
+            int startX = 0, startY = 0;
+            //先计算原图比例
+            float scaleRatio = image.Width / (float)image.Height;
+            //再按照比例映射至新图时，什么分辨率合适
+            //保持不变的情况下，若基于宽度
+            int newHeight = (int)(data.Width / scaleRatio);
+            //保持不变的情况下，若基于高度
+            int newWidth = (int)(data.Height * scaleRatio);
+            //新的正确比例情况下，哪个正确不越界
+            if (newHeight > data.Height)
+            {
+                //基于宽度，新的高度越界了那么，取基于高度
+                newHeight = data.Height;
+            }
+            else
+            {
+                //基于高度，新的宽度越界了那么，取基于宽度
+                newWidth = data.Width;
+            }
+            startX = (data.Width - newWidth) / 2;
+            startY = (data.Height - newHeight) / 2;
+
+            image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(startX, startY, newWidth, newHeight), false));
+        }
     }
 }
