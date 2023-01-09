@@ -170,5 +170,16 @@ namespace BatchTextureModifier
             _imageCompareView.WindowState = _imageCompareViewState;
             _imageCompareView.Activate();
         }
+
+        private void ChooseSingleImageBtn_Click(object sender, RoutedEventArgs e)
+        {
+            _helper.SelectSingleImage();
+        }
+
+        private void SaveSingleProcessBtn_Click(object sender, RoutedEventArgs e)
+        {
+            //保存文件
+
+        }
     }
 }

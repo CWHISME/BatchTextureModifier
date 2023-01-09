@@ -24,7 +24,7 @@ namespace BatchTextureModifier
         #region 数据绑定
         public int Width { get { return _convertData.ScaleMode == EScaleMode.NotScale && PreviewInputBitmap != null ? (PreviewInputBitmap.PixelWidth) : _convertData.Width; } set { _convertData.Width = CheckHeightWidthOutbound(value); Notify("Width"); PreviewOutputImage(); } }
         public int Height { get { return _convertData.ScaleMode == EScaleMode.NotScale && PreviewInputBitmap != null ? (PreviewInputBitmap.PixelHeight) : _convertData.Height; } set { _convertData.Height = CheckHeightWidthOutbound(value); Notify("Height"); PreviewOutputImage(); } }
-        public string? InputPath { get { return _convertData.InputPath; } set { _convertData.InputPath = value; PreviewInputPathImage(value); Notify("InputPath", "HasExistInputPath", "Width", "Height"); } }
+        public string? InputPath { get { return _convertData.InputPath; } set { _convertData.InputPath = value; PreviewInputPathImage(); Notify("InputPath", "HasExistInputPath", "Width", "Height"); } }
         public string? OutputPath { get { return _convertData.OutputPath; } set { _convertData.OutputPath = value; IsDirectOverideFile = OutputPath == InputPath; Notify("OutputPath", "HasExistOutputPath"); } }
         public bool IsDirectOverideFile { get { return _convertData.IsDirectOverideFile; } set { _convertData.IsDirectOverideFile = value; if (value && OutputPath != InputPath) OutputPath = InputPath; else if (!value && OutputPath == InputPath) { OutputPath = string.Empty; CheckOutputPath(); } Notify("IsDirectOverideFile"); } }
         public bool IsBackupInputFile { get { return _convertData.IsBackupInputFile; } set { if (!value && !ShowConfirmMessage("你已经选择了直接覆盖源文件！\n如果选择不备份的话，将会导致源文件直接丢失！\n\n确定要不备份吗？")) { IsBackupInputFile = true; return; } _convertData.IsBackupInputFile = value; } }
@@ -137,6 +137,20 @@ namespace BatchTextureModifier
             OutputPath = SelectPath();
         }
 
+        /// <summary>
+        /// 选择某个单图进行处理
+        /// </summary>
+        public void SelectSingleImage()
+        {
+            Microsoft.Win32.OpenFileDialog fileDialog = new Microsoft.Win32.OpenFileDialog();
+            fileDialog.DefaultExt = string.Join("|", TexturesModifyUtility.Filter);
+            fileDialog.Multiselect = false;
+            if ((bool)fileDialog.ShowDialog())
+            {
+                PreviewInputPathImage(fileDialog.FileName);
+            }
+        }
+
         public void DisplayAboutInfo()
         {
             if (MessageBox.Show("批量图片处理工具 \n\nMade by wangjiaying\n个人博客：wangjiaying.top\n\n=>点击确认前往<=", "关于", MessageBoxButton.OKCancel, MessageBoxImage.Information) == MessageBoxResult.OK)
@@ -158,12 +172,6 @@ namespace BatchTextureModifier
         #region Private
         private string SelectPath()
         {
-            //Microsoft.Win32.OpenFileDialog fileDialog = new Microsoft.Win32.OpenFileDialog();
-            //fileDialog.CheckFileExists = false;
-            //if ((bool)fileDialog.ShowDialog())
-            //{
-            //    TexturesOriginPathText.Text = fileDialog.FileName;
-            //}
             System.Windows.Forms.FolderBrowserDialog folderDialog = new System.Windows.Forms.FolderBrowserDialog();
             if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
@@ -182,11 +190,19 @@ namespace BatchTextureModifier
         /// 当选择了输入目录，使用其第一张图作为预览
         /// </summary>
         /// <param name="texturePath"></param>
-        private void PreviewInputPathImage(string texturePath)
+        private void PreviewInputPathImage()
         {
             CheckOutputPath();
             //获取输入目录第一张图作为预览图
-            string imagePath = TexturesModifyUtility.GetDirectoryFirstTextures(texturePath);
+            PreviewInputPathImage(TexturesModifyUtility.GetDirectoryFirstTextures(InputPath));
+        }
+
+        /// <summary>
+        /// 给定一张图片路径，加载为预览
+        /// </summary>
+        /// <param name="imagePath"></param>
+        private void PreviewInputPathImage(string imagePath)
+        {
             //清空旧图
             _previewImageBytes = null;
             if (!string.IsNullOrEmpty(imagePath))

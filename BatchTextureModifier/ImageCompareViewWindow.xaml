@@ -12,7 +12,7 @@
     </Window.Resources>
     <Grid>
         <DockPanel Background="White" >
-            <GroupBox Header="原图" Visibility="{c:Binding ElementName=JustDisplayResultCheck,Path=!IsChecked,FalseToVisibility=Collapsed}" Width="{c:Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DockPanel}, Path=(ActualWidth/2-10)}" BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1" >
+            <GroupBox Header="原图" Visibility="{c:Binding ElementName=JustDisplayResultCheck,Path=!IsChecked,FalseToVisibility=Collapsed}" Width="{c:Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DockPanel}, Path=(ActualWidth/2)}" BorderBrush="Black" BorderThickness="1,1,1,1" >
                 <Grid>
                     <Border BorderThickness="1" BorderBrush="Red" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Image Name="PreviewOriginImage" Source="{Binding PreviewInputBitmap}" Stretch="Uniform" />
@@ -26,7 +26,7 @@
                     <!--<Label Content="aaaaaaaaaaaa"></Label>-->
                 </Grid>
             </GroupBox>
-            <GroupBox Header="结果"  BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1">
+            <GroupBox Header="结果"  BorderBrush="Black" BorderThickness="1,1,1,1">
                 <Grid>
                     <!--<Viewbox>-->
                     <!--<Border BorderThickness="1" BorderBrush="Red">-->

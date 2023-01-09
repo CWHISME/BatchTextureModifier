@@ -19,22 +19,39 @@
         </Style>
     </Window.Resources>
     <Border BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1">
-        <StackPanel Background="#FFECECEC">
+        <StackPanel  Background="#FFECECEC">
             <GroupBox Header="设置"  BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1" VerticalAlignment="Top">
                 <Grid>
                     <StackPanel Orientation="Vertical">
-                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                            <Label x:Name="label" Content="原始目录：" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25"/>
-                            <TextBox x:Name="TexturesInputPathText" Text="{Binding InputPath}" VerticalAlignment="Top" Height="25" Width="480" TextAlignment="Left" VerticalContentAlignment="Center" />
-                            <Button x:Name="ChooseInputPathBtn" Content="选择" HorizontalAlignment="Left" Margin="10,0,0,0" Height="25" Click="ChooseInputPathBtn_Click"/>
-                            <Button x:Name="OpenInputPathBtn" Content="打开" IsEnabled="{Binding HasExistInputPath}" HorizontalAlignment="Left" Margin="10,0,0,0" Height="25" Click="OpenInputPathBtn_Click"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                            <Label Content="输出目录：" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25"/>
-                            <TextBox x:Name="TexturesOutputPathText" Text="{Binding OutputPath}" VerticalAlignment="Top" Height="25" Width="480" TextAlignment="Left" VerticalContentAlignment="Center"/>
-                            <Button x:Name="ChooseOutputPathBtn" Content="选择" HorizontalAlignment="Left"  Margin="10,0,0,0"  Height="25" Click="ChooseOutputPathBtn_Click" />
-                            <Button x:Name="OpenOutputPathBtn" IsEnabled="{Binding HasExistOutputPath}" Content="打开" HorizontalAlignment="Left"  Margin="10,0,0,0"  Height="25" Click="OpenOutputPathBtn_Click" />
-                        </StackPanel>
+                        <TabControl>
+                            <TabItem Header="批量处理">
+                                <Grid>
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Column="0">
+                                            <Label x:Name="label" Content="原始目录：" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25"/>
+                                            <TextBox x:Name="TexturesInputPathText" Text="{Binding InputPath}" VerticalAlignment="Top" Height="25" Width="480" TextAlignment="Left" VerticalContentAlignment="Center" />
+                                            <Button x:Name="ChooseInputPathBtn" Content="选择" HorizontalAlignment="Left" Margin="10,0,0,0" Height="25" Click="ChooseInputPathBtn_Click"/>
+                                            <Button x:Name="OpenInputPathBtn" Content="打开" IsEnabled="{Binding HasExistInputPath}" HorizontalAlignment="Left" Margin="10,0,0,0" Height="25" Click="OpenInputPathBtn_Click"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Column="1">
+                                            <Label Content="输出目录：" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25"/>
+                                            <TextBox x:Name="TexturesOutputPathText" Text="{Binding OutputPath}" VerticalAlignment="Top" Height="25" Width="480" TextAlignment="Left" VerticalContentAlignment="Center"/>
+                                            <Button x:Name="ChooseOutputPathBtn" Content="选择" HorizontalAlignment="Left"  Margin="10,0,0,0"  Height="25" Click="ChooseOutputPathBtn_Click" />
+                                            <Button x:Name="OpenOutputPathBtn" IsEnabled="{Binding HasExistOutputPath}" Content="打开" HorizontalAlignment="Left"  Margin="10,0,0,0"  Height="25" Click="OpenOutputPathBtn_Click" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Button x:Name="DoProcessBtn" Content="处理" HorizontalAlignment="Right" VerticalAlignment="Top" Height="60" Width="100" Margin="0,10,10,10" FontSize="16" Click="DoProcessBtn_Click"/>
+                                </Grid>
+                            </TabItem>
+                            <TabItem Header="单图处理">
+                                <Grid>
+                                    <TextBlock Text="单图模式下，可以仅选择一张图进行处理，点击保存按钮选择保存位置" Foreground="DarkCyan" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,20"></TextBlock>
+                                    <Button Name="ChooseSingleImageBtn" Content="选择" Width="50" Height="25" VerticalAlignment="Bottom" Margin="0,0,0,10" Click="ChooseSingleImageBtn_Click"></Button>
+                                    <Button Name="SaveSingleProcessBtn" Content="保存" HorizontalAlignment="Right" VerticalAlignment="Top" Height="60" Width="100" Margin="0,10,10,10" FontSize="16" Click="SaveSingleProcessBtn_Click"/>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+
                         <GroupBox Header="参数设置" Margin="0,10,0,0">
                             <StackPanel Orientation="Horizontal">
                                 <GroupBox Header="输出格式：">
@@ -76,14 +93,13 @@
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>
-                    <Button x:Name="DoProcessBtn" Content="处理" HorizontalAlignment="Right" VerticalAlignment="Top" Height="60" Width="100" Margin="0,10,10,30" FontSize="16" Click="DoProcessBtn_Click"/>
                 </Grid>
             </GroupBox>
             <GroupBox Header="结果"  BorderBrush="Black" Margin="5,0,5,5" BorderThickness="1,1,1,1" VerticalAlignment="Top" Height="365">
                 <TabControl x:Name="OutPutTabControl">
                     <TabItem Header="预览">
                         <DockPanel Background="White" >
-                            <GroupBox Header="原图" Visibility="{c:Binding ElementName=JustDisplayResultCheck,Path=!IsChecked,FalseToVisibility=Collapsed}"  Width="{c:Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DockPanel}, Path=(ActualWidth/2-10)}" BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1" >
+                            <GroupBox Header="原图" Visibility="{c:Binding ElementName=JustDisplayResultCheck,Path=!IsChecked,FalseToVisibility=Collapsed}"  Width="{c:Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DockPanel}, Path=(ActualWidth/2)}" BorderBrush="Black"  BorderThickness="1,1,1,1" >
                                 <Grid>
                                     <Border BorderThickness="1" BorderBrush="Red" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image Name="PreviewOriginImage" Source="{Binding PreviewInputBitmap}" Stretch="Uniform" />
@@ -97,7 +113,7 @@
                                     <!--<Label Content="aaaaaaaaaaaa"></Label>-->
                                 </Grid>
                             </GroupBox>
-                            <GroupBox Header="结果"  BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1">
+                            <GroupBox Header="结果"  BorderBrush="Black" BorderThickness="1,1,1,1">
                                 <Grid>
                                     <!--<Viewbox>-->
                                     <!--<Border BorderThickness="1" BorderBrush="Red">-->
