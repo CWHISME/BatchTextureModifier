@@ -179,7 +179,7 @@ namespace BatchTextureModifier
         private void SaveSingleProcessBtn_Click(object sender, RoutedEventArgs e)
         {
             //保存文件
-
+            _helper.SaveSinglePreviewImage();
         }
     }
 }

@@ -8,6 +8,7 @@ using SixLabors.ImageSharp.Formats.Tga;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Transforms;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -60,6 +61,12 @@ namespace BatchTextureModifier
         //    KnownResamplers.Welch,
         //};
 
+        #region 日志显示
+
+
+
+        #endregion
+
         static TexturesModifyUtility()
         {
             PropertyInfo[] prt = typeof(SixLabors.ImageSharp.Processing.KnownResamplers).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
@@ -95,7 +102,7 @@ namespace BatchTextureModifier
             }
             catch (System.Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                LogManager.GetInstance.LogError(ex.Message);
             }
 
             return string.Empty;
@@ -123,58 +130,73 @@ namespace BatchTextureModifier
         public static byte[] ResizeTextures(byte[] bytes, TexturesModifyData data)
         {
             if (data.ScaleMode == EScaleMode.NotScale && data.OutputFormat == null) return bytes;
-            using (Image image = Image.Load(bytes))
+            try
             {
-                ResizeOptions opt;
-                switch (data.ScaleMode)
+                using (Image image = Image.Load(bytes))
                 {
-                    case EScaleMode.NotScale:
-                        break;
-                    case EScaleMode.DirectScale_Min:
-                        ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Min);
-                        break;
-                    case EScaleMode.DirectScale_Max:
-                        ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Max);
-                        break;
-                    case EScaleMode.StretchScale:
-                        ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Stretch);
-                        break;
-                    case EScaleMode.ScaleBased:
-                        ResizeByScaleBased(data, image);
-                        break;
-                    case EScaleMode.DirectCut:
-                        image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, 0, image.Width, image.Height), false));
-                        break;
-                    case EScaleMode.ScaleBasedByCut:
-                        ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Crop);
-                        break;
-                    case EScaleMode.WidthBase:
+                    switch (data.ScaleMode)
+                    {
+                        case EScaleMode.NotScale:
+                            break;
+                        case EScaleMode.DirectScale_Min:
+                            ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Min);
+                            break;
+                        case EScaleMode.DirectScale_Max:
+                            ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Max);
+                            break;
+                        case EScaleMode.StretchScale:
+                            ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Stretch);
+                            break;
+                        case EScaleMode.ScaleBased:
+                            ResizeByScaleBased(data, image);
+                            break;
+                        case EScaleMode.DirectCut:
+                            image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, 0, image.Width, image.Height), false));
+                            break;
+                        case EScaleMode.ScaleBasedByCut:
+                            ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.Crop);
+                            break;
+                        case EScaleMode.WidthBase:
 
-                        break;
-                    case EScaleMode.HeightBase:
+                            break;
+                        case EScaleMode.HeightBase:
 
-                        break;
-                    case EScaleMode.Fill:
-                        ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.BoxPad);
-                        break;
-                    case EScaleMode.POT:
-                        break;
-                    case EScaleMode.Max:
-                        break;
-                    default:
-                        break;
+                            break;
+                        case EScaleMode.Fill:
+                            ResizeByMode(data, image, SixLabors.ImageSharp.Processing.ResizeMode.BoxPad);
+                            break;
+                        case EScaleMode.POT:
+                            break;
+                        case EScaleMode.Max:
+                            break;
+                        default:
+                            break;
+                    }
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        //检测是原格式还是转换格式
+                        if (data.OutputFormat == null)
+                            image.Save(ms, Image.DetectFormat(bytes));
+                        else
+                            image.Save(ms, data.OutputFormat);
+                        return ms.ToArray();
+                    }
+                    //image.Save(Path.Combine(Path.GetDirectoryName(path), "[Resize]" + Path.GetFileName(path)));
                 }
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    //检测是原格式还是转换格式
-                    if (data.OutputFormat == null)
-                        image.Save(ms, Image.DetectFormat(bytes));
-                    else
-                        image.Save(ms, data.OutputFormat);
-                    return ms.ToArray();
-                }
-                //image.Save(Path.Combine(Path.GetDirectoryName(path), "[Resize]" + Path.GetFileName(path)));
             }
+            catch (Exception ex)
+            {
+                LogManager.GetInstance.LogError(ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 自动检查图片格式
+        /// </summary>
+        public static IImageFormat DetectImageFormat(byte[] bytes)
+        {
+            return Image.DetectFormat(bytes);
         }
 
         private static void ResizeByMode(TexturesModifyData data, Image image, SixLabors.ImageSharp.Processing.ResizeMode mode)

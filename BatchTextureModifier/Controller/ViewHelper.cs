@@ -20,6 +20,8 @@ namespace BatchTextureModifier
         private TexturesModifyData _convertData = new TexturesModifyData();
         //预览图片
         private byte[]? _previewImageBytes;
+        //预览图片后缀
+        private string _previewImageSuffix;
 
         #region 数据绑定
         public int Width { get { return _convertData.ScaleMode == EScaleMode.NotScale && PreviewInputBitmap != null ? (PreviewInputBitmap.PixelWidth) : _convertData.Width; } set { _convertData.Width = CheckHeightWidthOutbound(value); Notify("Width"); PreviewOutputImage(); } }
@@ -31,6 +33,9 @@ namespace BatchTextureModifier
 
         //输出格式列表
         public string[] OutputFormats { get { return TexturesModifyUtility.Filter; } }
+        //保留原图片格式
+        private bool _stayOldFormat = true;
+        public bool StayOldFormat { get { return _stayOldFormat; } set { _stayOldFormat = value; OutputFormatIndex = value ? -1 : 0; Notify("StayOldFormat", "OutputFormatIndex"); } }
         //选择的输出格式下标
         private int _outputFormatIndex;
         public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputFormat = TexturesModifyUtility.GetFormatByIndex(value); } }
@@ -65,8 +70,8 @@ namespace BatchTextureModifier
         public Visibility PreviewImageVisibility { get { return PreviewInputBitmap == null ? Visibility.Hidden : Visibility.Visible; } }
 
         //日志显示
-        private List<string> _outputLogString = new List<string>(30);
-        public List<string> OutputLogString { get { return _outputLogString; } }
+        private System.Collections.ObjectModel.ObservableCollection<LogViewItem> _outputLogs = new System.Collections.ObjectModel.ObservableCollection<LogViewItem>();
+        public System.Collections.ObjectModel.ObservableCollection<LogViewItem> OutputLogs { get { return _outputLogs; } }
         #endregion
 
         #region 语言提示绑定
@@ -80,6 +85,10 @@ namespace BatchTextureModifier
 
         public ViewHelper()
         {
+            //注释日志
+            LogManager.GetInstance.OnLogChange += OnLogChange;
+            //写每个缩放模式的说明太麻烦了，而且之前还用中文名，还要加注释，三边难以同步
+            //直接反射吧算了
             _scaleModes = new string[(int)EScaleMode.Max];
             _langScaleModeTips = new string[_scaleModes.Length];
             Type scaleModeType = typeof(EScaleMode);
@@ -90,6 +99,16 @@ namespace BatchTextureModifier
                 DescriptionAttribute des = scaleModeType.GetField(_scaleModes[i]).GetCustomAttribute<System.ComponentModel.DescriptionAttribute>();
                 _langScaleModeTips[i] = des?.Description;
             }
+        }
+
+        private void OnLogChange(LogItem log)
+        {
+            //System.Windows.Data.CollectionViewSource view = new System.Windows.Data.CollectionView();
+            //view.pus
+            _outputLogs.Add(new LogViewItem(log));
+            if (log.LogType == LogItem.ELogType.Error)
+                ShowErrorMessage(log.LogString);
+            Notify("OutputLogs");
         }
 
         #region 绑定通知
@@ -148,6 +167,30 @@ namespace BatchTextureModifier
             if ((bool)fileDialog.ShowDialog())
             {
                 PreviewInputPathImage(fileDialog.FileName);
+            }
+        }
+
+        /// <summary>
+        /// 将当前预览图保存
+        /// </summary>
+        public void SaveSinglePreviewImage()
+        {
+            Microsoft.Win32.SaveFileDialog fileDialog = new Microsoft.Win32.SaveFileDialog();
+            //如果没有选择转换格式，则保持原图片后缀不变
+            fileDialog.DefaultExt = _convertData.OutputFormat == null ? _previewImageSuffix : TexturesModifyUtility.Filter[_outputFormatIndex];
+            fileDialog.Filter = string.Concat(fileDialog.DefaultExt, "|", fileDialog.DefaultExt);
+            if ((bool)fileDialog.ShowDialog())
+            {
+                try
+                {
+                    byte[] bytes = TexturesModifyUtility.ResizeTextures(_previewImageBytes, _convertData);
+                    File.WriteAllBytes(fileDialog.FileName, bytes);
+                    ShowMessage("保存成功！路径：" + fileDialog.FileName);
+                }
+                catch (Exception ex)
+                {
+                    LogManager.GetInstance.LogError(ex.Message);
+                }
             }
         }
 
@@ -224,10 +267,13 @@ namespace BatchTextureModifier
             }
             else
             {
+                //存储后缀
+                _previewImageSuffix = "*" + Path.GetExtension(imagePath);
                 //加载预览的原图
                 PreviewInputBitmap = LoadImage(_previewImageBytes);
                 //检测并显示输出结果图
-                PreviewOutputImage();
+                if (PreviewInputBitmap != null)
+                    PreviewOutputImage();
             }
         }
 
@@ -244,21 +290,13 @@ namespace BatchTextureModifier
         private void PreviewOutputImage()
         {
             if (_previewImageBytes == null) return;
-            byte[] bytes;
-            try
-            {
-                bytes = TexturesModifyUtility.ResizeTextures(_previewImageBytes, _convertData);
-            }
-            catch (Exception ex)
-            {
-                ShowErrorMessage(ex.Message);
-                return;
-            }
+            byte[] bytes = TexturesModifyUtility.ResizeTextures(_previewImageBytes, _convertData);
             PreviewOutputBitmap = LoadImage(bytes);
         }
 
         public BitmapImage LoadImage(byte[] texBytes)
         {
+            if (texBytes == null) return null;
             //释放旧图资源
             //if (bitmap.StreamSource != null)
             //    bitmap.StreamSource.Dispose();
@@ -267,11 +305,19 @@ namespace BatchTextureModifier
             //_inputPreviewBitmap.UriSource = new Uri(imagePath);
             //using (MemoryStream ms = new MemoryStream(texBytes))
             //{
-            BitmapImage bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.StreamSource = new MemoryStream(texBytes);
-            bitmap.EndInit();
-            return bitmap;
+            try
+            {
+                BitmapImage bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.StreamSource = new MemoryStream(texBytes);
+                bitmap.EndInit();
+                return bitmap;
+            }
+            catch (Exception ex)
+            {
+                LogManager.GetInstance.LogError("LoadImage Failed:" + ex.Message);
+                return null;
+            }
             //}
             //释放原始资源
             //texStream.Dispose();
@@ -322,6 +368,11 @@ namespace BatchTextureModifier
         private bool ShowConfirmMessage(string str)
         {
             return MessageBox.Show(str, "提示", MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.OK;
+        }
+
+        private void ShowMessage(string str)
+        {
+            MessageBox.Show(str, "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         #endregion
     }

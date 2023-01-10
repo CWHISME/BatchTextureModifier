@@ -19,8 +19,8 @@
         </Style>
     </Window.Resources>
     <Border BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1">
-        <StackPanel  Background="#FFECECEC">
-            <GroupBox Header="设置"  BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1,1,1,1" VerticalAlignment="Top">
+        <DockPanel  Background="#FFECECEC">
+            <GroupBox DockPanel.Dock="Top" Header="设置"  BorderBrush="Black" Margin="5,5,5,5" BorderThickness="1">
                 <Grid>
                     <StackPanel Orientation="Vertical">
                         <TabControl>
@@ -47,7 +47,7 @@
                                 <Grid>
                                     <TextBlock Text="单图模式下，可以仅选择一张图进行处理，点击保存按钮选择保存位置" Foreground="DarkCyan" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,20"></TextBlock>
                                     <Button Name="ChooseSingleImageBtn" Content="选择" Width="50" Height="25" VerticalAlignment="Bottom" Margin="0,0,0,10" Click="ChooseSingleImageBtn_Click"></Button>
-                                    <Button Name="SaveSingleProcessBtn" Content="保存" HorizontalAlignment="Right" VerticalAlignment="Top" Height="60" Width="100" Margin="0,10,10,10" FontSize="16" Click="SaveSingleProcessBtn_Click"/>
+                                    <Button Name="SaveSingleProcessBtn" IsEnabled="{c:Binding 'PreviewOutputBitmap!=null'}" Content="保存" HorizontalAlignment="Right" VerticalAlignment="Top" Height="60" Width="100" Margin="0,10,10,10" FontSize="16" Click="SaveSingleProcessBtn_Click"/>
                                 </Grid>
                             </TabItem>
                         </TabControl>
@@ -56,7 +56,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <GroupBox Header="输出格式：">
                                     <StackPanel Orientation="Horizontal" Height="26">
-                                        <CheckBox Name="StayInputFormatToggle" IsChecked="True" Content="保留原格式" Height="26"  ToolTip="{Binding StayInputFormatTips}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
+                                        <CheckBox Name="StayInputFormatToggle" IsChecked="{Binding StayOldFormat}" Content="保留原格式" Height="26"  ToolTip="{Binding StayInputFormatTips}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
                                         <ComboBox Name="OutputFormatComboBox" ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}" Visibility="{c:Binding ElementName=StayInputFormatToggle,Path=!IsChecked,FalseToVisibility=Collapsed}" Width="80" Margin="5,0,0,0" VerticalContentAlignment="Center" />
                                     </StackPanel>
                                 </GroupBox>
@@ -95,7 +95,11 @@
                     </StackPanel>
                 </Grid>
             </GroupBox>
-            <GroupBox Header="结果"  BorderBrush="Black" Margin="5,0,5,5" BorderThickness="1,1,1,1" VerticalAlignment="Top" Height="365">
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock  Name="AboutBtn" Text="Made by wangjiaying" ToolTip="点我 (‾◡◝)" TextDecorations="Underline" MouseDown="AboutBtn_Click"   />
+                <TextBlock  Name="OpensourceBtn" Text="(Git)" ToolTip="点点点... ᓚᘏᗢ" TextDecorations="Underline" MouseDown="OpensourceBtn_Click"  Margin="0,0,5,0" Foreground="Blue"  />
+            </StackPanel>
+            <GroupBox Header="结果"  BorderBrush="Black" Margin="5,0,5,5" BorderThickness="1" >
                 <TabControl x:Name="OutPutTabControl">
                     <TabItem Header="预览">
                         <DockPanel Background="White" >
@@ -136,15 +140,17 @@
                     </TabItem>
                     <TabItem Header="输出">
                         <Grid Background="White">
-                            <ListBox x:Name="ResultListBox" d:ItemsSource="{d:SampleData ItemCount=5}"/>
+                            <ListBox IsEnabled="False" ItemsSource="{Binding OutputLogs}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Content}" Foreground="{Binding ForgroundColor}"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </Grid>
                     </TabItem>
                 </TabControl>
             </GroupBox>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <TextBlock  Name="AboutBtn" Text="Made by wangjiaying" ToolTip="点我 (‾◡◝)" TextDecorations="Underline" MouseDown="AboutBtn_Click"   />
-                <TextBlock  Name="OpensourceBtn" Text="(Git)" ToolTip="点点点... ᓚᘏᗢ" TextDecorations="Underline" MouseDown="OpensourceBtn_Click"  Margin="0,0,5,0" Foreground="Blue"  />
-            </StackPanel>
-        </StackPanel>
+        </DockPanel>
     </Border>
 </Window>
