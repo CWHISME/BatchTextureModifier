@@ -55,13 +55,13 @@
                         <GroupBox Header="参数设置" Margin="0,10,0,0">
                             <StackPanel Orientation="Horizontal">
                                 <GroupBox Header="输出格式：">
-                                    <StackPanel Orientation="Horizontal" Height="26">
+                                    <StackPanel Orientation="Horizontal">
                                         <CheckBox Name="StayInputFormatToggle" IsChecked="{Binding StayOldFormat}" Content="保留原格式" Height="26"  ToolTip="{Binding StayInputFormatTips}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
                                         <ComboBox Name="OutputFormatComboBox" ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}" Visibility="{c:Binding ElementName=StayInputFormatToggle,Path=!IsChecked,FalseToVisibility=Collapsed}" Width="80" Margin="5,0,0,0" VerticalContentAlignment="Center" />
                                     </StackPanel>
                                 </GroupBox>
                                 <GroupBox Header="缩放模式：">
-                                    <StackPanel Orientation="Horizontal" Height="26">
+                                    <StackPanel Orientation="Horizontal" >
                                         <ComboBox Name="ScaleComboBox" ItemsSource="{Binding ScaleModes}" SelectedIndex="{Binding ScaleModeIndex}" Width="80"  VerticalContentAlignment="Center">
                                             <ComboBox.ToolTip>
                                                 <!--<StackPanel Orientation="Vertical">-->
@@ -77,6 +77,11 @@
                                             <TextBox Name="ScaleWidth" Text="{Binding Width}" Width="80"  VerticalContentAlignment="Center" PreviewTextInput="OnPreviewTextInputLimitNumber" InputScope="Number" TextChanged="ScaleWidth_TextChanged"/>
                                             <Label Content="高" Margin="0,0,0,0"/>
                                             <TextBox Name="ScaleHeight" Text="{Binding Height}" Width="80" VerticalContentAlignment="Center" PreviewTextInput="OnPreviewTextInputLimitNumber" InputScope="Number" TextChanged="ScaleHeight_TextChanged"/>
+                                        </StackPanel>
+                                        <StackPanel  Orientation="Horizontal" Visibility="{c:Binding 'IsPotScaleMode',FalseToVisibility=Collapsed}">
+                                            <CheckBox Content="保持像素" Margin="5,0,0,0" IsChecked="{Binding PotStayPixel}" ToolTip="{Binding LangPotStayPixelTips}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
+                                            <Label Content="POT 算法:" Margin="5,0,0,0" />
+                                            <ComboBox ItemsSource="{Binding PotMode}" SelectedIndex="{Binding PotModeIndex}" MinWidth="80" VerticalContentAlignment="Center"/>
                                         </StackPanel>
                                         <StackPanel  Orientation="Horizontal" Visibility="{c:Binding 'ScaleModeIndex>0',FalseToVisibility=Collapsed}">
                                             <Label Content="缩放算法:" Margin="0,0,0,0"/>

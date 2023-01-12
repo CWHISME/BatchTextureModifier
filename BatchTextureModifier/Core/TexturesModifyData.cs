@@ -45,6 +45,15 @@ namespace BatchTextureModifier
         /// 缩放算法
         /// </summary>
         public IResampler ResamplerAlgorithm;
+        /// <summary>
+        /// 如果选择POT缩放，POT计算模式
+        /// </summary>
+        public EPotMode PotMode = EPotMode.ToNearest;
+        /// <summary>
+        /// 如果是放大，保持像素不变
+        /// </summary>
+        public bool PotStayPixel = true;
+
 
         public TexturesModifyData()
         {
@@ -76,6 +85,20 @@ namespace BatchTextureModifier
         HeightBase,
         [Description("POT缩放：高宽缩放至最接近2N次方的分辨率，尽量保持比例不变，不足处进行透明度填充")]
         POT,
+        [Description("POT方形缩放：高宽缩放至最接近2N次方的方形分辨率，尽量保持比例不变，不足处进行透明度填充")]
+        POT_Cube,
+        Max
+    }
+
+    /// <summary>
+    /// POT 缩放模式
+    /// </summary>
+
+    public enum EPotMode
+    {
+        ToNearest,
+        ToLarger,
+        ToSmaller,
         Max
     }
 }

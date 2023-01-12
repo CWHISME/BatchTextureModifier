@@ -19,7 +19,7 @@ namespace BatchTextureModifier
         //数据
         private TexturesModifyData _convertData = new TexturesModifyData();
         //预览图片
-        private byte[]? _previewImageBytes;
+        private byte[] _previewImageBytes;
         //预览图片后缀
         private string _previewImageSuffix;
 
@@ -40,20 +40,34 @@ namespace BatchTextureModifier
         private int _outputFormatIndex;
         public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputFormat = TexturesModifyUtility.GetFormatByIndex(value); } }
 
-        //缩放模式
+        //==================缩放模式==================
         private string[] _scaleModes;// = new string[] { "不缩放", "直接缩放", "比例缩放", "直接裁剪", "比例裁剪", "基于宽度", "基于高度", "填充缩放", "POT缩放" };
         public string[] ScaleModes { get { return _scaleModes; } }
-        //分辨率设置是否显示
-        public bool ShowPixelSetting { get { return _convertData.ScaleMode != EScaleMode.NotScale && _convertData.ScaleMode != EScaleMode.POT; } }
         //选择的缩放模式下标
         private int _scaleModeIndex;
-        public int ScaleModeIndex { get { return _scaleModeIndex; } set { _scaleModeIndex = value; _convertData.ScaleMode = (EScaleMode)value; Notify("ScaleModeIndex", "ShowPixelSetting", "Width", "Height"); PreviewOutputImage(); } }
+        public int ScaleModeIndex { get { return _scaleModeIndex; } set { _scaleModeIndex = value; _convertData.ScaleMode = (EScaleMode)value; Notify("ScaleModeIndex", "ShowPixelSetting", "Width", "Height", "IsPotScaleMode"); PreviewOutputImage(); } }
+        public bool IsPotScaleMode { get { return _convertData.ScaleMode == EScaleMode.POT || _convertData.ScaleMode == EScaleMode.POT_Cube; } }
+        //============================================
+
+        //==================POT 缩放算法==================
+        private string[] _potMode;
+        public string[] PotMode { get { return _potMode; } }
+        //选择的POT算法下标
+        private int _potModeIndex;
+        public int PotModeIndex { get { return _potModeIndex; } set { _potModeIndex = value; _convertData.PotMode = (EPotMode)value; PreviewOutputImage(); } }
+        public bool PotStayPixel { get { return _convertData.PotStayPixel; } set { _convertData.PotStayPixel = value; PreviewOutputImage(); } }
+        //============================================
+
+        //==================图像缩放算法==================
+        //分辨率设置是否显示
+        public bool ShowPixelSetting { get { return _convertData.ScaleMode != EScaleMode.NotScale && !IsPotScaleMode; } }
         //缩放算法
         //private string[] _resamplerAlgorithmNames;
         public List<string> ResamplerAlgorithmNames { get { return TexturesModifyUtility.ResamplerAlgorithmNames; } }
         //选择的缩放算法下标
         private int _resamplerAlgorithmIndex;
         public int ResamplerAlgorithmIndex { get { return _resamplerAlgorithmIndex; } set { _resamplerAlgorithmIndex = value; _convertData.ResamplerAlgorithm = TexturesModifyUtility.ResamplerAlgorithms[_resamplerAlgorithmIndex]; Notify("ResamplerAlgorithmIndex"); PreviewOutputImage(); } }
+        //============================================
         #endregion
 
         #region UI绑定
@@ -81,6 +95,7 @@ namespace BatchTextureModifier
         public string LangOverideTips { get { return "该选项会直接覆盖源文件，并将源文件备份至『输出目录』"; } }
         private string[] _langScaleModeTips;
         public string[] LangScaleModeTips { get { return _langScaleModeTips; } }
+        public string LangPotStayPixelTips { get { return "如果是放大操作，保持像素不变，否则以最短边进行填充"; } }
         #endregion
 
         public ViewHelper()
@@ -98,6 +113,12 @@ namespace BatchTextureModifier
                 _scaleModes[i] = mode.ToString();
                 DescriptionAttribute des = scaleModeType.GetField(_scaleModes[i]).GetCustomAttribute<System.ComponentModel.DescriptionAttribute>();
                 _langScaleModeTips[i] = des?.Description;
+            }
+
+            _potMode = new string[(int)EPotMode.Max];
+            for (int i = 0; i < _potMode.Length; i++)
+            {
+                _potMode[i] = ((EPotMode)i).ToString();
             }
         }
 
@@ -164,7 +185,7 @@ namespace BatchTextureModifier
             Microsoft.Win32.OpenFileDialog fileDialog = new Microsoft.Win32.OpenFileDialog();
             fileDialog.DefaultExt = string.Join("|", TexturesModifyUtility.Filter);
             fileDialog.Multiselect = false;
-            if ((bool)fileDialog.ShowDialog())
+            if (fileDialog.ShowDialog() == true)
             {
                 PreviewInputPathImage(fileDialog.FileName);
             }
@@ -179,7 +200,7 @@ namespace BatchTextureModifier
             //如果没有选择转换格式，则保持原图片后缀不变
             fileDialog.DefaultExt = _convertData.OutputFormat == null ? _previewImageSuffix : TexturesModifyUtility.Filter[_outputFormatIndex];
             fileDialog.Filter = string.Concat(fileDialog.DefaultExt, "|", fileDialog.DefaultExt);
-            if ((bool)fileDialog.ShowDialog())
+            if (fileDialog.ShowDialog() == true)
             {
                 try
                 {
