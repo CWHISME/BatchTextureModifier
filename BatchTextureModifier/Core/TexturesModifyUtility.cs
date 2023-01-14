@@ -6,6 +6,7 @@ using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Tga;
 using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Transforms;
 using System;
@@ -28,11 +29,11 @@ namespace BatchTextureModifier
         /// 编码器
         /// </summary>
         public readonly static IImageEncoder[] _encoder = new IImageEncoder[] {
-            new JpegEncoder(),
-            new PngEncoder(),
-            new WebpEncoder(),
+            new PngEncoder() ,
+            new JpegEncoder(){ Quality=100},
+            new WebpEncoder(){ TransparentColorMode=WebpTransparentColorMode.Preserve},
             new TgaEncoder(),
-            new BmpEncoder(),
+            new BmpEncoder(){ SupportTransparency=true},
             new GifEncoder()
         };
         /// <summary>
@@ -132,6 +133,8 @@ namespace BatchTextureModifier
             if (data.ScaleMode == EScaleMode.NotScale && data.OutputFormat == null) return bytes;
             try
             {
+                //Image<Rgba32> 
+                SixLabors.ImageSharp.Processing.ResizeMode padMode = data.StayPixel ? SixLabors.ImageSharp.Processing.ResizeMode.BoxPad : SixLabors.ImageSharp.Processing.ResizeMode.Pad;
                 using (Image image = Image.Load(bytes))
                 {
                     switch (data.ScaleMode)
@@ -167,15 +170,15 @@ namespace BatchTextureModifier
                             image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle((data.Width - newWidth) / 2, 0, newWidth, data.Height), false));
                             break;
                         case EScaleMode.Fill:
-                            ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.BoxPad);
+                            ResizeByMode(image, data, padMode);
                             break;
                         case EScaleMode.POT:
-                            ResizeByMode(image, CalcPot(image.Width, data.PotMode), CalcPot(image.Height, data.PotMode), data.ResamplerAlgorithm, data.PotStayPixel ? SixLabors.ImageSharp.Processing.ResizeMode.BoxPad : SixLabors.ImageSharp.Processing.ResizeMode.Pad);
+                            ResizeByMode(image, CalcPot(image.Width, data.PotMode), CalcPot(image.Height, data.PotMode), data.ResamplerAlgorithm, padMode);
                             break;
                         case EScaleMode.POT_Cube:
                             //取最长边作为新的方形变长
                             int pot = CalcPot(image.Width > image.Height ? image.Width : image.Height, data.PotMode);
-                            ResizeByMode(image, pot, pot, data.ResamplerAlgorithm, data.PotStayPixel ? SixLabors.ImageSharp.Processing.ResizeMode.BoxPad : SixLabors.ImageSharp.Processing.ResizeMode.Pad);
+                            ResizeByMode(image, pot, pot, data.ResamplerAlgorithm, padMode);
                             break;
                         case EScaleMode.Max:
                             break;
