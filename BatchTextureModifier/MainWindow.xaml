@@ -66,10 +66,10 @@
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Height="26">
                                             <CheckBox Name="StayInputFormatToggle" IsChecked="{Binding StayOldFormat}" Content="保留原格式" ToolTip="{Binding StayInputFormatTips}" />
-                                            <ComboBox Name="OutputFormatComboBox" ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}" Visibility="{c:Binding ElementName=StayInputFormatToggle,Path=!IsChecked,FalseToVisibility=Collapsed}" Width="80" Margin="5,0,0,0"  />
+                                            <ComboBox Name="OutputFormatComboBox" ToolTip="{Binding OutputFormatComboBoxTips}" ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}" Visibility="{c:Binding ElementName=StayInputFormatToggle,Path=!IsChecked,FalseToVisibility=Collapsed}" Width="80" Margin="5,0,0,0"  />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                            <StackPanel Orientation="Horizontal" Visibility="{c:Binding IsShowQualityTextBox,FalseToVisibility=Collapsed}" Height="26">
+                                            <StackPanel Orientation="Horizontal" Visibility="{c:Binding IsSupportQuality,FalseToVisibility=Collapsed}" Height="26">
                                                 <TextBlock Text="质量：" ToolTip="{Binding QualityTips}"/>
                                                 <TextBox Width="50" Text="{Binding Quality}" AllowDrop="True"/>
                                                 <TextBlock Text="%" />
@@ -100,6 +100,11 @@
                                                     </DockPanel>
                                                 </DockPanel>
                                             </StackPanel>
+                                            <StackPanel>
+                                                <CheckBox Content="保持透明" Margin="5,5,0,0" IsChecked="{Binding StayAlpha}" ToolTip="{Binding LangStayAlphaTips}" Visibility="{c:Binding 'IsShowStayAlpha',FalseToVisibility=Collapsed}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
+                                                <CheckBox Content="无损格式" Margin="5,5,0,0" IsChecked="{Binding WebpIsLossless}" Visibility="{c:Binding 'IsWebp',FalseToVisibility=Collapsed}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
+                                                <!--<CheckBox Content="测试-保持Alpha" Margin="5,5,0,0" DataContext="{Binding ConvertData}" IsChecked="{Binding IsSupportAlphaFormat,Mode=OneWay}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>-->
+                                            </StackPanel>
                                         </StackPanel>
                                     </StackPanel>
                                 </GroupBox>
@@ -125,7 +130,6 @@
                                         </DockPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <CheckBox Content="保持像素"  Margin="5,5,0,0" IsChecked="{Binding StayPixel}" ToolTip="{Binding LangStayPixelTips}" Visibility="{c:Binding 'IsShowStayPixel',FalseToVisibility=Collapsed}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
-                                            <CheckBox Content="保持透明" Margin="5,5,0,0" IsChecked="{Binding StayAlpha}" ToolTip="{Binding LangStayAlphaTips}" Visibility="{c:Binding 'IsShowStayAlpha',FalseToVisibility=Collapsed}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,5,0,0" Height="26">
                                             <StackPanel  Orientation="Horizontal" Visibility="{c:Binding 'IsPotScaleMode',FalseToVisibility=Collapsed}">

@@ -1,10 +1,13 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿//=========================================
+//作者：wangjiaying@cwhisme
+//日期：2023年1月10日
+//描述：日志管理器
+//用途：https://github.com/CWHISME/BatchTextureModifier.git
+//=========================================
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using static BatchTextureModifier.LogItem;
 
 namespace BatchTextureModifier

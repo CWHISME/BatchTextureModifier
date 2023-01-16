@@ -1,4 +1,11 @@
-﻿using SixLabors.ImageSharp.Formats.Jpeg;
+﻿//=========================================
+//作者：wangjiaying@cwhisme
+//日期：
+//描述：与 WPF UI 绑定的控制类
+//用途：https://github.com/CWHISME/BatchTextureModifier.git
+//=========================================
+
+using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using System;
@@ -26,6 +33,7 @@ namespace BatchTextureModifier
         private float _outputPreviewImageSize;
 
         #region 数据绑定
+        public TexturesModifyData ConvertData { get { return _convertData; } }
         public int Width { get { return _convertData.ScaleMode == EScaleMode.NotScale && PreviewInputBitmap != null ? (PreviewInputBitmap.PixelWidth) : _convertData.Width; } set { _convertData.Width = CheckHeightWidthOutbound(value); Notify("Width"); PreviewOutputImage(); } }
         public int Height { get { return _convertData.ScaleMode == EScaleMode.NotScale && PreviewInputBitmap != null ? (PreviewInputBitmap.PixelHeight) : _convertData.Height; } set { _convertData.Height = CheckHeightWidthOutbound(value); Notify("Height"); PreviewOutputImage(); } }
         public string? InputPath { get { return _convertData.InputPath; } set { _convertData.InputPath = value; PreviewInputPathImage(); Notify("InputPath", "HasExistInputPath", "Width", "Height"); } }
@@ -44,82 +52,69 @@ namespace BatchTextureModifier
         public bool StayOldFormat { get { return _stayOldFormat; } set { _stayOldFormat = value; OutputFormatIndex = value ? -1 : 0; Notify("StayOldFormat", "OutputFormatIndex"); } }
         //选择的输出格式下标
         private int _outputFormatIndex;
-        public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputFormat = TexturesModifyUtility.GetFormatByIndex(value); Notify("IsShowQualityTextBox", "Quality", "IsWebp", "IsPng", "WebpEncodingMethodsIndex", "PngCompressionLevelsIndex", "PngEncodingBitDepthIndex", "PngPngColorTypeIndex", "IsShowStayAlpha"); PreviewOutputImage(); } }
-        //==================图像导出质量==================
-        //Webp格式转换方法
-        private string[] _webpEncodingMethods;
-        public string[] WebpEncodingMethods { get { return _webpEncodingMethods; } }
-        public int WebpEncodingMethodsIndex { get { return _convertData.OutputFormat is WebpEncoder ? Array.IndexOf(_webpEncodingMethods, (_convertData.OutputFormat as WebpEncoder).Method.ToString()) : 0; } set { (_convertData.OutputFormat as WebpEncoder).Method = (WebpEncodingMethod)value; PreviewOutputImage(); } }
-        //png压缩等级
-        private string[] _pngCompressionLevels;
-        public string[] PngCompressionLevels { get { return _pngCompressionLevels; } }
-        public int PngCompressionLevelsIndex { get { return _convertData.OutputFormat is PngEncoder ? Array.IndexOf(_pngCompressionLevels, (_convertData.OutputFormat as PngEncoder).CompressionLevel.ToString()) : 0; } set { (_convertData.OutputFormat as PngEncoder).CompressionLevel = (PngCompressionLevel)value; PreviewOutputImage(); } }
-        //Png 颜色深度
-        private string[] _pngEncodingBitDepth = new string[] { "Bit1", "Bit2", "Bit4", "Bit8", "Bit16" };
-        public string[] PngEncodingBitDepth { get { return _pngEncodingBitDepth; } }
-        public int PngEncodingBitDepthIndex { get { return _convertData.OutputFormat is PngEncoder ? Array.IndexOf(_pngEncodingBitDepth, (_convertData.OutputFormat as PngEncoder).BitDepth.ToString()) : 0; } set { (_convertData.OutputFormat as PngEncoder).BitDepth = (PngBitDepth)Enum.Parse(typeof(PngBitDepth), _pngEncodingBitDepth[value]); PreviewOutputImage(); } }
-        //Png 过滤算法
-        private string[] _pngPngFilterMethods;
-        public string[] PngPngFilterMethods { get { return _pngPngFilterMethods; } }
-        public int PngPngFilterMethodsIndex { get { return _convertData.OutputFormat is PngEncoder ? Array.IndexOf(_pngPngFilterMethods, (_convertData.OutputFormat as PngEncoder).FilterMethod.ToString()) : 0; } set { (_convertData.OutputFormat as PngEncoder).FilterMethod = (PngFilterMethod)value; PreviewOutputImage(); } }
-        //Png 颜色类型
-        private string[] _pngPngColorType = new string[] { "自动", "Grayscale", "Rgb", "Palette", "GrayscaleWithAlpha", "RgbWithAlpha" };
-        public string[] PngPngColorType { get { return _pngPngColorType; } }
-        public int PngPngColorTypeIndex { get { return _convertData.OutputFormat is PngEncoder ? Array.IndexOf(_pngPngColorType, (_convertData.OutputFormat as PngEncoder).ColorType == null ? "自动" : (_convertData.OutputFormat as PngEncoder).ColorType.ToString()) : 0; } set { (_convertData.OutputFormat as PngEncoder).ColorType = value == 0 ? null : (PngColorType)Enum.Parse(typeof(PngColorType), _pngPngColorType[value]); PreviewOutputImage(); } }
+        public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputEncoder = TexturesModifyUtility.GetFormatByIndex(value); Notify("IsShowQualityTextBox", "Quality", "IsWebp", "IsPng", "WebpEncodingMethodsIndex", "PngCompressionLevelsIndex", "PngEncodingBitDepthIndex", "PngPngColorTypeIndex", "IsShowStayAlpha", "StayAlpha"); PreviewOutputImage(); } }
 
+        //==================图像导出设置==================
+        public PngEncoderSetting PngSetting { get { return (PngEncoderSetting)TexturesModifyUtility.Encoder[0]; } }
+        public JpegEncoderSetting JpegSetting { get { return (JpegEncoderSetting)TexturesModifyUtility.Encoder[1]; } }
+        public WebpEncoderSetting WebpSetting { get { return (WebpEncoderSetting)TexturesModifyUtility.Encoder[2]; } }
+        public TgaEncoderSetting TgaSetting { get { return (TgaEncoderSetting)TexturesModifyUtility.Encoder[3]; } }
+        public BmpEncoderSetting BmpSetting { get { return (BmpEncoderSetting)TexturesModifyUtility.Encoder[4]; } }
+        public GifEncoderSetting GifSetting { get { return (GifEncoderSetting)TexturesModifyUtility.Encoder[5]; } }
+
+        //Webp格式转换方法==========
+        //private string[] _webpEncodingMethods;
+        public string[] WebpEncodingMethods { get { return WebpSetting.Method.EnumToNames(); } }
+        public int WebpEncodingMethodsIndex { get { return WebpSetting.Method.EnumToIndex(); } set { WebpSetting.Method = value.IndexToEnum<WebpEncodingMethod>(); PreviewOutputImage(); } }
+        public bool WebpIsLossless { get { return WebpSetting.IsLossless; } set { WebpSetting.IsLossless = value; PreviewOutputImage(); } }
+
+        //Png格式转换方法==========
+        //png压缩等级
+        public string[] PngCompressionLevels { get { return PngSetting.CompressionLevel.EnumToNames(); } }
+        public int PngCompressionLevelsIndex { get { return PngSetting.CompressionLevel.EnumToIndex(); } set { PngSetting.CompressionLevel = value.IndexToEnum<PngCompressionLevel>(); PreviewOutputImage(); } }
+        //Png 颜色深度
+        //private string[] _pngEncodingBitDepth = new string[] { "Bit1", "Bit2", "Bit4", "Bit8", "Bit16" };
+        public string[] PngEncodingBitDepth { get { return PngSetting.BitDepth.EnumToNames<PngBitDepth>(); } }
+        public int PngEncodingBitDepthIndex { get { return PngSetting.BitDepth.EnumToIndex(); } set { PngSetting.BitDepth = value.IndexToEnumNullable<PngBitDepth>(); PreviewOutputImage(); } }
+        //Png 过滤算法
+        //private string[] _pngPngFilterMethods;
+        public string[] PngPngFilterMethods { get { return PngSetting.FilterMethod.EnumToNames<PngFilterMethod>(); } }
+        public int PngPngFilterMethodsIndex { get { return PngSetting.FilterMethod.EnumToIndex(); } set { PngSetting.FilterMethod = value.IndexToEnumNullable<PngFilterMethod>(); PreviewOutputImage(); } }
+        //Png 颜色类型
+        //private string[] _pngPngColorType = new string[] { "自动", "Grayscale", "Rgb", "Palette", "GrayscaleWithAlpha", "RgbWithAlpha" };
+        public string[] PngPngColorType { get { return PngSetting.ColorType.EnumToNames<PngColorType>(); } }
+        public int PngPngColorTypeIndex { get { return PngSetting.ColorType.EnumToIndex(); } set { PngSetting.ColorType = value.IndexToEnumNullable<PngColorType>(); PreviewOutputImage(); } }
 
         //是否显示质量设置
-        public bool IsShowQualityTextBox { get { return _convertData.OutputFormat is JpegEncoder || _convertData.OutputFormat is WebpEncoder; } }
-        public bool IsWebp { get { return _convertData.OutputFormat is WebpEncoder; } }
-        public bool IsPng { get { return _convertData.OutputFormat is PngEncoder; } }
+        public bool IsSupportQuality { get { return _convertData.OutputEncoder is IQualitySetting; } }
+        public bool IsWebp { get { return _convertData.OutputEncoder is WebpEncoderSetting; } }
+        public bool IsPng { get { return _convertData.OutputEncoder is PngEncoderSetting; } }
 
-        public int Quality
-        {
-            get
-            {
-                if (_convertData.OutputFormat is JpegEncoder)
-                    return (int)(_convertData.OutputFormat as JpegEncoder).Quality;
-                if (_convertData.OutputFormat is WebpEncoder)
-                    return (_convertData.OutputFormat as WebpEncoder).Quality;
-                return -1;
-            }
-            set
-            {
-                if (value > 100)
-                    value = 100;
-                if (value < 0)
-                    value = 0;
-                if (_convertData.OutputFormat is JpegEncoder)
-                    (_convertData.OutputFormat as JpegEncoder).Quality = value;
-                if (_convertData.OutputFormat is WebpEncoder)
-                    (_convertData.OutputFormat as WebpEncoder).Quality = value;
-                PreviewOutputImage();
-            }
-        }
+        public int Quality { get { return IsSupportQuality ? ((IQualitySetting)_convertData.OutputEncoder).Quality : -1; } set { value = Math.Clamp(value, 0, 100); ((IQualitySetting)_convertData.OutputEncoder).Quality = value; PreviewOutputImage(); } }
 
         //============================================
 
         //==================缩放模式==================
-        private string[] _scaleModes;// = new string[] { "不缩放", "直接缩放", "比例缩放", "直接裁剪", "比例裁剪", "基于宽度", "基于高度", "填充缩放", "POT缩放" };
-        public string[] ScaleModes { get { return _scaleModes; } }
+        //private string[] _scaleModes;// = new string[] { "不缩放", "直接缩放", "比例缩放", "直接裁剪", "比例裁剪", "基于宽度", "基于高度", "填充缩放", "POT缩放" };
+        public string[] ScaleModes { get { return _convertData.ScaleMode.EnumToNames(); } }
         //选择的缩放模式下标
         private int _scaleModeIndex;
-        public int ScaleModeIndex { get { return _scaleModeIndex; } set { _scaleModeIndex = value; _convertData.ScaleMode = (EScaleMode)value; Notify("ScaleModeIndex", "ShowPixelSetting", "Width", "Height", "IsPotScaleMode", "IsShowStayPixel", "IsShowStayAlpha"); PreviewOutputImage(); } }
+        public int ScaleModeIndex { get { return _convertData.ScaleMode.EnumToIndex(); } set { _convertData.ScaleMode = value.IndexToEnum<EScaleMode>(); Notify("ScaleModeIndex", "ShowPixelSetting", "Width", "Height", "IsPotScaleMode", "IsShowStayPixel", "IsShowStayAlpha"); PreviewOutputImage(); } }
         //是否报保持像素不变，仅 Pad 模式有效
         public bool StayPixel { get { return _convertData.StayPixel; } set { _convertData.StayPixel = value; PreviewOutputImage(); } }
         //缩放时是否保持透明不变
-        public bool StayAlpha { get { return _convertData.StayAlpha; } set { _convertData.StayAlpha = value; PreviewOutputImage(); } }
+        public bool? StayAlpha { get { return _convertData.StayAlpha; } set { _convertData.StayAlpha = value; PreviewOutputImage(); } }
         public bool IsShowStayPixel { get { return IsPotScaleMode || _convertData.ScaleMode == EScaleMode.Fill; } }
-        public bool IsShowStayAlpha { get { return _convertData.IsHaveAlphaFormat && ScaleModeIndex > 0; } }
+        public bool IsShowStayAlpha { get { return _convertData.IsSupportAlphaFormat /*&& ScaleModeIndex > 0*/; } }
         public bool IsPotScaleMode { get { return _convertData.ScaleMode == EScaleMode.POT || _convertData.ScaleMode == EScaleMode.POT_Cube; } }
         //============================================
 
         //==================POT 缩放算法==================
-        private string[] _potMode;
-        public string[] PotMode { get { return _potMode; } }
+        //private string[] _potMode;
+        public string[] PotMode { get { return _convertData.PotMode.EnumToNames(); } }
         //选择的POT算法下标
-        private int _potModeIndex;
-        public int PotModeIndex { get { return _potModeIndex; } set { _potModeIndex = value; _convertData.PotMode = (EPotMode)value; PreviewOutputImage(); } }
+        //private int _potModeIndex;
+        public int PotModeIndex { get { return _convertData.PotMode.EnumToIndex(); } set { _convertData.PotMode = value.IndexToEnum<EPotMode>(); PreviewOutputImage(); } }
         //============================================
 
         //==================图像缩放算法==================
@@ -155,12 +150,13 @@ namespace BatchTextureModifier
         #region 语言提示绑定
         public float TooTipsTime { get { return 0; } }
         public string StayInputFormatTips { get { return "在处理完毕后，保存的图片与输入格式保持一致。例如修改前是 *.png，修改后也是 *.png"; } }
+        public string OutputFormatComboBoxTips { get { return "选择输出的新图片格式，注意：TGA 不支持预览！"; } }
         public string LangResamplerAlgorithmTips { get { return "缩放算法将会影响图片的缩放质量，默认的 Bicubic 就不错"; } }
         public string LangOverideTips { get { return "该选项会直接覆盖源文件，并将源文件备份至『输出目录』"; } }
-        private string[] _langScaleModeTips;
-        public string[] LangScaleModeTips { get { return _langScaleModeTips; } }
+        //private string[] _langScaleModeTips;
+        public string[] LangScaleModeTips { get { return ConvertData.ScaleMode.EnumToDescriptions(); } }
         public string LangStayPixelTips { get { return "如果是放大操作，保持像素不变，否则等比放大"; } }
-        public string LangStayAlphalTips { get { return "如果是透明图片，保持透明通道不变，否则将透明度填充掉"; } }
+        public string LangStayAlphaTips { get { return "如果是透明图片，保持透明通道不变，否则将透明度填充掉"; } }
         public string CompressionTips { get { return "压缩等级越高，最终文件大小越小(但是会更慢)"; } }
         public string WebpEncodingMethodTips { get { return "编码等级越高，质量越好(但是会更慢)"; } }
         public string QualityTips { get { return "质量等级，范围 0~100，越高质量越好，但是文件也会更大"; } }
@@ -173,39 +169,39 @@ namespace BatchTextureModifier
             LogManager.GetInstance.OnLogChange += OnLogChange;
             //写每个缩放模式的说明太麻烦了，而且之前还用中文名，还要加注释，三边难以同步
             //直接反射吧算了
-            _scaleModes = new string[(int)EScaleMode.Max];
-            _langScaleModeTips = new string[_scaleModes.Length];
-            Type scaleModeType = typeof(EScaleMode);
-            for (int i = 0; i < _scaleModes.Length; i++)
-            {
-                EScaleMode mode = (EScaleMode)i;
-                _scaleModes[i] = mode.ToString();
-                DescriptionAttribute des = scaleModeType.GetField(_scaleModes[i]).GetCustomAttribute<System.ComponentModel.DescriptionAttribute>();
-                _langScaleModeTips[i] = des?.Description;
-            }
+            //_scaleModes = new string[(int)EScaleMode.Max];
+            //_langScaleModeTips = new string[_scaleModes.Length];
+            //Type scaleModeType = typeof(EScaleMode);
+            //for (int i = 0; i < _scaleModes.Length; i++)
+            //{
+            //    EScaleMode mode = (EScaleMode)i;
+            //    _scaleModes[i] = mode.ToString();
+            //    DescriptionAttribute des = scaleModeType.GetField(_scaleModes[i]).GetCustomAttribute<System.ComponentModel.DescriptionAttribute>();
+            //    _langScaleModeTips[i] = des?.Description;
+            //}
 
-            _potMode = new string[(int)EPotMode.Max];
-            for (int i = 0; i < _potMode.Length; i++)
-            {
-                _potMode[i] = ((EPotMode)i).ToString();
-            }
+            //_potMode = new string[(int)EPotMode.Max];
+            //for (int i = 0; i < _potMode.Length; i++)
+            //{
+            //    _potMode[i] = ((EPotMode)i).ToString();
+            //}
 
             //格式转换
-            _webpEncodingMethods = new string[(int)WebpEncodingMethod.BestQuality + 1];
-            for (int i = 0; i < _webpEncodingMethods.Length; i++)
-            {
-                _webpEncodingMethods[i] = ((WebpEncodingMethod)i).ToString();
-            }
-            _pngCompressionLevels = new string[(int)PngCompressionLevel.BestCompression + 1];
-            for (int i = 0; i < _pngCompressionLevels.Length; i++)
-            {
-                _pngCompressionLevels[i] = ((PngCompressionLevel)i).ToString();
-            }
-            _pngPngFilterMethods = new string[(int)PngFilterMethod.Adaptive + 1];
-            for (int i = 0; i < _pngPngFilterMethods.Length; i++)
-            {
-                _pngPngFilterMethods[i] = ((PngFilterMethod)i).ToString();
-            }
+            //_webpEncodingMethods = new string[(int)WebpEncodingMethod.BestQuality + 1];
+            //for (int i = 0; i < _webpEncodingMethods.Length; i++)
+            //{
+            //    _webpEncodingMethods[i] = ((WebpEncodingMethod)i).ToString();
+            //}
+            //_pngCompressionLevels = new string[(int)PngCompressionLevel.BestCompression + 1];
+            //for (int i = 0; i < _pngCompressionLevels.Length; i++)
+            //{
+            //    _pngCompressionLevels[i] = ((PngCompressionLevel)i).ToString();
+            //}
+            //_pngPngFilterMethods = new string[(int)PngFilterMethod.Adaptive + 1];
+            //for (int i = 0; i < _pngPngFilterMethods.Length; i++)
+            //{
+            //    _pngPngFilterMethods[i] = ((PngFilterMethod)i).ToString();
+            //}
         }
 
         private void OnLogChange(LogItem log)
@@ -284,7 +280,7 @@ namespace BatchTextureModifier
         {
             Microsoft.Win32.SaveFileDialog fileDialog = new Microsoft.Win32.SaveFileDialog();
             //如果没有选择转换格式，则保持原图片后缀不变
-            fileDialog.DefaultExt = _convertData.OutputFormat == null ? _previewImageSuffix : TexturesModifyUtility.Filter[_outputFormatIndex];
+            fileDialog.DefaultExt = _convertData.OutputEncoder == null ? _previewImageSuffix : TexturesModifyUtility.Filter[_outputFormatIndex];
             fileDialog.Filter = string.Concat(fileDialog.DefaultExt, "|", fileDialog.DefaultExt);
             if (fileDialog.ShowDialog() == true)
             {
@@ -326,13 +322,8 @@ namespace BatchTextureModifier
             System.Windows.Forms.FolderBrowserDialog folderDialog = new System.Windows.Forms.FolderBrowserDialog();
             if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                //Directory.GetAccessControl(folderDialog.SelectedPath);
-                //System.Security.AccessControl.DirectorySecurity ds = new DirectoryInfo(folderDialog.SelectedPath).GetAccessControl();
-                //var currentUserIdentity = System.IO.Path.Combine(Environment.UserDomainName, Environment.UserName);
-                //var userAccessRules = ds.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount)).OfType<System.Security.AccessControl.FileSystemAccessRule>();//.Where(i => i.IdentityReference.Value == currentUserIdentity).ToList();
                 DirectoryInfo info = new DirectoryInfo(folderDialog.SelectedPath);
                 return folderDialog.SelectedPath;
-                //callback?.Invoke(folderDialog.SelectedPath);
             }
             return string.Empty;
         }
@@ -414,9 +405,9 @@ namespace BatchTextureModifier
         private BitmapImage LoadImage(byte[] texBytes)
         {
             if (texBytes == null) return null;
+            BitmapImage bitmap = new BitmapImage();
             try
             {
-                BitmapImage bitmap = new BitmapImage();
                 bitmap.BeginInit();
                 bitmap.StreamSource = new MemoryStream(texBytes);
                 bitmap.EndInit();
@@ -425,7 +416,7 @@ namespace BatchTextureModifier
             catch (Exception ex)
             {
                 LogManager.GetInstance.LogError("LoadImage Failed:" + ex.Message);
-                return null;
+                return PreviewInputBitmap;
             }
         }
 

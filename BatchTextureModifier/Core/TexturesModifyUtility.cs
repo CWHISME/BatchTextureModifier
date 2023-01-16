@@ -1,41 +1,39 @@
+//=========================================
+//作者：wangjiaying@cwhisme
+//日期：
+//描述：封装 ImageSharp 调用
+//用途：https://github.com/CWHISME/BatchTextureModifier.git
+//=========================================
+
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Bmp;
-using SixLabors.ImageSharp.Formats.Gif;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Formats.Tga;
-using SixLabors.ImageSharp.Formats.Webp;
-using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Transforms;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Windows;
 
 namespace BatchTextureModifier
 {
     public static class TexturesModifyUtility
     {
-
         /// <summary>
         /// 格式
         /// </summary>
         public readonly static string[] Filter = new string[] { "*.png", "*.jpg", "*.webp", "*.tga", "*.bmp", "*.gif" };
         /// <summary>
-        /// 编码器
+        /// 编码器缓存
         /// </summary>
-        public readonly static IImageEncoder[] _encoder = new IImageEncoder[] {
-            new PngEncoder() ,
-            new JpegEncoder(){ Quality=100},
-            new WebpEncoder(){ TransparentColorMode=WebpTransparentColorMode.Preserve},
-            new TgaEncoder(),
-            new BmpEncoder(){ SupportTransparency=true},
-            new GifEncoder()
+        public readonly static IEncoderSetting[] Encoder = new IEncoderSetting[] {
+            new PngEncoderSetting(),
+            new JpegEncoderSetting(),
+            new WebpEncoderSetting(),
+            new TgaEncoderSetting(),
+            new BmpEncoderSetting(),
+            new GifEncoderSetting()
         };
+
         /// <summary>
         /// 缩放算法
         /// </summary>
@@ -44,29 +42,6 @@ namespace BatchTextureModifier
         /// 缩放算法对应的名字
         /// </summary>
         public readonly static List<string> ResamplerAlgorithmNames;
-        //public readonly static IResampler[] ResamplerAlgorithms = new IResampler[] {
-        //    KnownResamplers.Bicubic,
-        //    KnownResamplers.Box,
-        //    KnownResamplers.CatmullRom,
-        //    KnownResamplers.Hermite,
-        //    KnownResamplers.Lanczos2,
-        //    KnownResamplers.Lanczos3,
-        //    KnownResamplers.Lanczos5,
-        //    KnownResamplers.Lanczos8,
-        //    KnownResamplers.MitchellNetravali,
-        //    KnownResamplers.NearestNeighbor,
-        //    KnownResamplers.Robidoux,
-        //    KnownResamplers.RobidouxSharp,
-        //    KnownResamplers.Spline,
-        //    KnownResamplers.Triangle,
-        //    KnownResamplers.Welch,
-        //};
-
-        #region 日志显示
-
-
-
-        #endregion
 
         static TexturesModifyUtility()
         {
@@ -113,10 +88,10 @@ namespace BatchTextureModifier
         /// 通过下标取格式
         /// </summary>
         /// <returns></returns>
-        public static IImageEncoder? GetFormatByIndex(int index)
+        public static IEncoderSetting? GetFormatByIndex(int index)
         {
-            if (index < 0 || index >= _encoder.Length) return null;
-            return _encoder[index];
+            if (index < 0 || index >= Encoder.Length) return null;
+            return Encoder[index];
         }
 
         public static void ResizeTextures(string path, TexturesModifyData data)
@@ -130,7 +105,7 @@ namespace BatchTextureModifier
 
         public static byte[] ResizeTextures(byte[] bytes, TexturesModifyData data)
         {
-            if (data.ScaleMode == EScaleMode.NotScale && data.OutputFormat == null) return bytes;
+            if (data.ScaleMode == EScaleMode.NotScale && data.OutputEncoder == null) return bytes;
             try
             {
                 //Image<Rgba32> 
@@ -188,10 +163,15 @@ namespace BatchTextureModifier
                     using (MemoryStream ms = new MemoryStream())
                     {
                         //检测是原格式还是转换格式
-                        if (data.OutputFormat == null)
-                            image.Save(ms, Image.DetectFormat(bytes));
+                        IImageFormat? format;
+                        if (data.OutputEncoder == null)
+                        {
+                            if (Image.TryDetectFormat(bytes, out format))
+                                image.Save(ms, format);
+                            else image.Save(ms, GetDefaultEncoder());
+                        }
                         else
-                            image.Save(ms, data.OutputFormat);
+                            image.Save(ms, data.OutputEncoder.CraeteEncoder());
                         return ms.ToArray();
                     }
                     //image.Save(Path.Combine(Path.GetDirectoryName(path), "[Resize]" + Path.GetFileName(path)));
@@ -204,12 +184,9 @@ namespace BatchTextureModifier
             }
         }
 
-        /// <summary>
-        /// 自动检查图片格式
-        /// </summary>
-        public static IImageFormat DetectImageFormat(byte[] bytes)
+        private static IImageEncoder GetDefaultEncoder()
         {
-            return Image.DetectFormat(bytes);
+            return Encoder[0].CraeteEncoder();
         }
 
         private static void ResizeByMode(Image image, TexturesModifyData data, SixLabors.ImageSharp.Processing.ResizeMode mode)

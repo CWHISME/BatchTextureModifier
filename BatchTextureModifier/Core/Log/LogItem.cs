@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿//=========================================
+//作者：wangjiaying@cwhisme
+//日期：2023年1月10日
+//描述：日志对象
+//用途：https://github.com/CWHISME/BatchTextureModifier.git
+//=========================================
 
 namespace BatchTextureModifier
 {
