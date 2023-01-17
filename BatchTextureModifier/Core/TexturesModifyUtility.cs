@@ -112,54 +112,49 @@ namespace BatchTextureModifier
                 SixLabors.ImageSharp.Processing.ResizeMode padMode = data.StayPixel ? SixLabors.ImageSharp.Processing.ResizeMode.BoxPad : SixLabors.ImageSharp.Processing.ResizeMode.Pad;
                 using (Image image = Image.Load(bytes))
                 {
-                    switch (data.ScaleMode)
-                    {
-                        case EScaleMode.NotScale:
-                            break;
-                        case EScaleMode.DirectScale_Min:
-                            ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Min);
-                            break;
-                        case EScaleMode.DirectScale_Max:
-                            ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Max);
-                            break;
-                        case EScaleMode.StretchScale:
-                            ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Stretch);
-                            break;
-                        case EScaleMode.ScaleBased:
-                            ResizeByScaleBased(data, image);
-                            break;
-                        case EScaleMode.DirectCut:
-                            image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, 0, image.Width, image.Height), false));
-                            break;
-                        case EScaleMode.ScaleBasedByCut:
-                            ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Crop);
-                            break;
-                        case EScaleMode.WidthBase:
-                            //基于宽度，计算新的高度
-                            int newHeight = (int)(data.Width / (image.Width / (float)image.Height));
-                            image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, (data.Height - newHeight) / 2, data.Width, newHeight), false));
-                            break;
-                        case EScaleMode.HeightBase:
-                            //基于高度，计算新的宽度
-                            int newWidth = (int)(data.Height * (image.Width / (float)image.Height));
-                            image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle((data.Width - newWidth) / 2, 0, newWidth, data.Height), false));
-                            break;
-                        case EScaleMode.Fill:
-                            ResizeByMode(image, data, padMode);
-                            break;
-                        case EScaleMode.POT:
-                            ResizeByMode(image, CalcPot(image.Width, data.PotMode), CalcPot(image.Height, data.PotMode), data.ResamplerAlgorithm, padMode);
-                            break;
-                        case EScaleMode.POT_Cube:
-                            //取最长边作为新的方形变长
-                            int pot = CalcPot(image.Width > image.Height ? image.Width : image.Height, data.PotMode);
-                            ResizeByMode(image, pot, pot, data.ResamplerAlgorithm, padMode);
-                            break;
-                        case EScaleMode.Max:
-                            break;
-                        default:
-                            break;
-                    }
+                    if (data.ScaleMode != EScaleMode.NotScale)
+                        switch (data.ScaleMode)
+                        {
+                            case EScaleMode.ScaleBased:
+                                ResizeByScaleBased(data, image);
+                                break;
+                            case EScaleMode.DirectCut:
+                                image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, 0, image.Width, image.Height), false));
+                                break;
+                            case EScaleMode.WidthBase:
+                                //基于宽度，计算新的高度
+                                int newHeight = (int)(data.Width / (image.Width / (float)image.Height));
+                                image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, (data.Height - newHeight) / 2, data.Width, newHeight), false));
+                                break;
+                            case EScaleMode.HeightBase:
+                                //基于高度，计算新的宽度
+                                int newWidth = (int)(data.Height * (image.Width / (float)image.Height));
+                                image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle((data.Width - newWidth) / 2, 0, newWidth, data.Height), false));
+                                break;
+                            case EScaleMode.ScaleBasedByCut:
+                                ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Crop);
+                                break;
+                            case EScaleMode.Pad:
+                                ResizeByMode(image, data, padMode);
+                                break;
+                            case EScaleMode.DirectScale_Min:
+                                ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Min);
+                                break;
+                            case EScaleMode.DirectScale_Max:
+                                ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Max);
+                                break;
+                            case EScaleMode.StretchScale:
+                                ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Stretch);
+                                break;
+                            case EScaleMode.POT:
+                                ResizeByMode(image, CalcPot(image.Width, data.PotMode), CalcPot(image.Height, data.PotMode), data, padMode);
+                                break;
+                            case EScaleMode.POT_Cube:
+                                //取最长边作为新的方形变长
+                                int pot = CalcPot(image.Width > image.Height ? image.Width : image.Height, data.PotMode);
+                                ResizeByMode(image, pot, pot, data, padMode);
+                                break;
+                        }
                     using (MemoryStream ms = new MemoryStream())
                     {
                         //检测是原格式还是转换格式
@@ -189,16 +184,16 @@ namespace BatchTextureModifier
             return Encoder[0].CraeteEncoder();
         }
 
-        private static void ResizeByMode(Image image, TexturesModifyData data, SixLabors.ImageSharp.Processing.ResizeMode mode)
+        private static void ResizeByMode(Image image, TexturesModifyData data, ResizeMode mode)
         {
-            ResizeByMode(image, data.Width, data.Height, data.ResamplerAlgorithm, mode);
+            ResizeByMode(image, data.Width, data.Height, data, mode);
         }
 
-        private static void ResizeByMode(Image image, int width, int height, IResampler resampler, SixLabors.ImageSharp.Processing.ResizeMode mode)
+        private static void ResizeByMode(Image image, int width, int height, TexturesModifyData data, ResizeMode mode)
         {
             ResizeOptions opt = new ResizeOptions();
-            opt.Position = AnchorPositionMode.Center;
-            opt.Sampler = resampler;
+            opt.Position = data.ImageScaleAnchorPositionMode;
+            opt.Sampler = data.ResamplerAlgorithm;
             opt.Size = new SixLabors.ImageSharp.Size(width, height);
             opt.Mode = mode;
             image.Mutate(x => x.Resize(opt));

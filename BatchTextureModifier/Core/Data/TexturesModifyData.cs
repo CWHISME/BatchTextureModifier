@@ -5,6 +5,7 @@
 //用途：https://github.com/CWHISME/BatchTextureModifier.git
 //=========================================
 
+using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Transforms;
 
 namespace BatchTextureModifier
@@ -32,7 +33,7 @@ namespace BatchTextureModifier
         /// <summary>
         /// 直接覆盖源文件
         /// </summary>
-        public bool IsDirectOverideFile;
+        public bool IsDirectOverideFile = false;
         /// <summary>
         /// 备份源文件
         /// </summary>
@@ -41,11 +42,15 @@ namespace BatchTextureModifier
         /// <summary>
         /// 输出格式
         /// </summary>
-        public IEncoderSetting OutputEncoder;
+        public IEncoderSetting? OutputEncoder;
         /// <summary>
         /// 缩放模式
         /// </summary>
-        public EScaleMode ScaleMode;
+        public EScaleMode ScaleMode = EScaleMode.NotScale;
+        /// <summary>
+        /// 缩放图片时，标准位置
+        /// </summary>
+        public AnchorPositionMode ImageScaleAnchorPositionMode = AnchorPositionMode.Center;
         /// <summary>
         /// 缩放算法
         /// </summary>

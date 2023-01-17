@@ -25,9 +25,9 @@ namespace BatchTextureModifier
         //数据
         private TexturesModifyData _convertData = new TexturesModifyData();
         //预览图片
-        private byte[] _previewImageBytes;
+        private byte[]? _previewImageBytes;
         //预览图片后缀
-        private string _previewImageSuffix;
+        private string _previewImageSuffix = String.Empty;
         //预览的图片大小缓存
         private float _inputPreviewImageSize;
         private float _outputPreviewImageSize;
@@ -90,23 +90,27 @@ namespace BatchTextureModifier
         public bool IsWebp { get { return _convertData.OutputEncoder is WebpEncoderSetting; } }
         public bool IsPng { get { return _convertData.OutputEncoder is PngEncoderSetting; } }
 
-        public int Quality { get { return IsSupportQuality ? ((IQualitySetting)_convertData.OutputEncoder).Quality : -1; } set { value = Math.Clamp(value, 0, 100); ((IQualitySetting)_convertData.OutputEncoder).Quality = value; PreviewOutputImage(); } }
+        public int Quality { get { return IsSupportQuality ? ((IQualitySetting)_convertData.OutputEncoder!).Quality : -1; } set { value = Math.Clamp(value, 0, 100); ((IQualitySetting)_convertData.OutputEncoder!).Quality = value; PreviewOutputImage(); } }
 
         //============================================
 
         //==================缩放模式==================
-        //private string[] _scaleModes;// = new string[] { "不缩放", "直接缩放", "比例缩放", "直接裁剪", "比例裁剪", "基于宽度", "基于高度", "填充缩放", "POT缩放" };
         public string[] ScaleModes { get { return _convertData.ScaleMode.EnumToNames(); } }
         //选择的缩放模式下标
-        private int _scaleModeIndex;
-        public int ScaleModeIndex { get { return _convertData.ScaleMode.EnumToIndex(); } set { _convertData.ScaleMode = value.IndexToEnum<EScaleMode>(); Notify("ScaleModeIndex", "ShowPixelSetting", "Width", "Height", "IsPotScaleMode", "IsShowStayPixel", "IsShowStayAlpha"); PreviewOutputImage(); } }
+        public int ScaleModeIndex { get { return _convertData.ScaleMode.EnumToIndex(); } set { _convertData.ScaleMode = value.IndexToEnum<EScaleMode>(); Notify("ScaleModeIndex", "ShowPixelSetting", "Width", "Height", "IsPotScaleMode", "IsShowStayPixel", "IsShowStayAlpha", "IsDisplayImageScaleAnchorPositionModes"); PreviewOutputImage(); } }
         //是否报保持像素不变，仅 Pad 模式有效
         public bool StayPixel { get { return _convertData.StayPixel; } set { _convertData.StayPixel = value; PreviewOutputImage(); } }
         //缩放时是否保持透明不变
         public bool? StayAlpha { get { return _convertData.StayAlpha; } set { _convertData.StayAlpha = value; PreviewOutputImage(); } }
-        public bool IsShowStayPixel { get { return IsPotScaleMode || _convertData.ScaleMode == EScaleMode.Fill; } }
+        //保持像素
+        public bool IsShowStayPixel { get { return IsPotScaleMode || _convertData.ScaleMode == EScaleMode.Pad; } }
         public bool IsShowStayAlpha { get { return _convertData.IsSupportAlphaFormat /*&& ScaleModeIndex > 0*/; } }
+        //是否POT缩放
         public bool IsPotScaleMode { get { return _convertData.ScaleMode == EScaleMode.POT || _convertData.ScaleMode == EScaleMode.POT_Cube; } }
+        //停靠标准
+        public bool IsDisplayImageScaleAnchorPositionModes { get { return _convertData.ScaleMode >= EScaleMode.Pad; } }
+        public string[] ImageScaleAnchorPositionModes { get { return _convertData.ImageScaleAnchorPositionMode.EnumToNames(); } }
+        public int ImageScaleAnchorPositionModeIndex { get { return _convertData.ImageScaleAnchorPositionMode.EnumToIndex(); } set { _convertData.ImageScaleAnchorPositionMode = value.IndexToEnum<SixLabors.ImageSharp.Processing.AnchorPositionMode>(); PreviewOutputImage(); } }
         //============================================
 
         //==================POT 缩放算法==================
@@ -136,10 +140,10 @@ namespace BatchTextureModifier
         //输出目录存在
         public bool HasExistOutputPath { get { return Directory.Exists(OutputPath); } }
         //预览图
-        private BitmapImage _previewInputBitmap;
-        public BitmapImage PreviewInputBitmap { get { return _previewInputBitmap; } set { _previewInputBitmap = value; Notify("PreviewInputBitmap", "PreviewImageVisibility"); } }
-        private BitmapImage _previewOutputBitmap;
-        public BitmapImage PreviewOutputBitmap { get { return _previewOutputBitmap; } set { _previewOutputBitmap = value; Notify("PreviewOutputBitmap"); } }
+        private BitmapImage? _previewInputBitmap;
+        public BitmapImage? PreviewInputBitmap { get { return _previewInputBitmap; } set { _previewInputBitmap = value; Notify("PreviewInputBitmap", "PreviewImageVisibility"); } }
+        private BitmapImage? _previewOutputBitmap;
+        public BitmapImage? PreviewOutputBitmap { get { return _previewOutputBitmap; } set { _previewOutputBitmap = value; Notify("PreviewOutputBitmap"); } }
         public Visibility PreviewImageVisibility { get { return PreviewInputBitmap == null ? Visibility.Hidden : Visibility.Visible; } }
 
         //日志显示
@@ -156,7 +160,7 @@ namespace BatchTextureModifier
         //private string[] _langScaleModeTips;
         public string[] LangScaleModeTips { get { return ConvertData.ScaleMode.EnumToDescriptions(); } }
         public string LangStayPixelTips { get { return "如果是放大操作，保持像素不变，否则等比放大"; } }
-        public string LangStayAlphaTips { get { return "如果是透明图片，保持透明通道不变，否则将透明度填充掉"; } }
+        public string LangStayAlphaTips { get { return "如果是透明图片，保持透明通道不变"; } }
         public string CompressionTips { get { return "压缩等级越高，最终文件大小越小(但是会更慢)"; } }
         public string WebpEncodingMethodTips { get { return "编码等级越高，质量越好(但是会更慢)"; } }
         public string QualityTips { get { return "质量等级，范围 0~100，越高质量越好，但是文件也会更大"; } }
@@ -167,41 +171,6 @@ namespace BatchTextureModifier
         {
             //注释日志
             LogManager.GetInstance.OnLogChange += OnLogChange;
-            //写每个缩放模式的说明太麻烦了，而且之前还用中文名，还要加注释，三边难以同步
-            //直接反射吧算了
-            //_scaleModes = new string[(int)EScaleMode.Max];
-            //_langScaleModeTips = new string[_scaleModes.Length];
-            //Type scaleModeType = typeof(EScaleMode);
-            //for (int i = 0; i < _scaleModes.Length; i++)
-            //{
-            //    EScaleMode mode = (EScaleMode)i;
-            //    _scaleModes[i] = mode.ToString();
-            //    DescriptionAttribute des = scaleModeType.GetField(_scaleModes[i]).GetCustomAttribute<System.ComponentModel.DescriptionAttribute>();
-            //    _langScaleModeTips[i] = des?.Description;
-            //}
-
-            //_potMode = new string[(int)EPotMode.Max];
-            //for (int i = 0; i < _potMode.Length; i++)
-            //{
-            //    _potMode[i] = ((EPotMode)i).ToString();
-            //}
-
-            //格式转换
-            //_webpEncodingMethods = new string[(int)WebpEncodingMethod.BestQuality + 1];
-            //for (int i = 0; i < _webpEncodingMethods.Length; i++)
-            //{
-            //    _webpEncodingMethods[i] = ((WebpEncodingMethod)i).ToString();
-            //}
-            //_pngCompressionLevels = new string[(int)PngCompressionLevel.BestCompression + 1];
-            //for (int i = 0; i < _pngCompressionLevels.Length; i++)
-            //{
-            //    _pngCompressionLevels[i] = ((PngCompressionLevel)i).ToString();
-            //}
-            //_pngPngFilterMethods = new string[(int)PngFilterMethod.Adaptive + 1];
-            //for (int i = 0; i < _pngPngFilterMethods.Length; i++)
-            //{
-            //    _pngPngFilterMethods[i] = ((PngFilterMethod)i).ToString();
-            //}
         }
 
         private void OnLogChange(LogItem log)
@@ -243,6 +212,7 @@ namespace BatchTextureModifier
         }
         #endregion
 
+        #region 提供于界面接口
         /// <summary>
         /// 选择输入目录
         /// </summary>
@@ -278,6 +248,7 @@ namespace BatchTextureModifier
         /// </summary>
         public void SaveSinglePreviewImage()
         {
+            if (_previewImageBytes == null) return;
             Microsoft.Win32.SaveFileDialog fileDialog = new Microsoft.Win32.SaveFileDialog();
             //如果没有选择转换格式，则保持原图片后缀不变
             fileDialog.DefaultExt = _convertData.OutputEncoder == null ? _previewImageSuffix : TexturesModifyUtility.Filter[_outputFormatIndex];
@@ -313,6 +284,7 @@ namespace BatchTextureModifier
                 System.Diagnostics.Process.Start("explorer.exe", "https://github.com/CWHISME/BatchTextureModifier.git");
             }
         }
+        #endregion
 
         //==================Private=====================
 
@@ -334,6 +306,7 @@ namespace BatchTextureModifier
         /// <param name="texturePath"></param>
         private void PreviewInputPathImage()
         {
+            if (string.IsNullOrEmpty(InputPath)) return;
             CheckOutputPath();
             //获取输入目录第一张图作为预览图
             PreviewInputPathImage(TexturesModifyUtility.GetDirectoryFirstTextures(InputPath));
@@ -399,10 +372,10 @@ namespace BatchTextureModifier
         private float CalcSize(byte[] bytes)
         {
             if (bytes == null) return 0;
-            return (float)Math.Round(bytes.Length / 1024f / 1024, 2);
+            return (float)(Math.Round(bytes.Length / 1024f / 1024, 2));
         }
 
-        private BitmapImage LoadImage(byte[] texBytes)
+        private BitmapImage? LoadImage(byte[] texBytes)
         {
             if (texBytes == null) return null;
             BitmapImage bitmap = new BitmapImage();

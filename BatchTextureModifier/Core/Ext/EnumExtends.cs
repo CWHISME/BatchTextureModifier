@@ -6,24 +6,28 @@
 //=========================================
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Reflection;
 
 namespace BatchTextureModifier
 {
     /// <summary>
     /// 扩展 枚举，使其可以更方便支持 WPF 数据绑定
     /// </summary>
-    public static class EnumExtends
+    public static partial class EnumExtends
     {
 
         //private static Dictionary<Type, string[]> _enumNamesCache = new Dictionary<Type, string[]>();
         /// <summary>
         /// 枚举转字符串缓存
         /// </summary>
-        private static List<CacheData> _cacheDatas = new List<CacheData>(10);
+        //private static List<CacheData> _cacheDatas = new List<CacheData>(10);
+        //private static CacheData[] _cacheDatas = new CacheData[10];
+        private static StructRefernceArray<CacheData> _cacheDatas = new StructRefernceArray<CacheData>();
+        //private static int _cacheUsingIndex = 0;
+
+        //缓存不足时，递增数量
+        //private const int CacheIncreaseNum = 5;
         private const string FirstName = "自动";
+        public static readonly string[] NullStrings = new string[] { "Null" };
 
         /// <summary>
         /// 枚举直接转字符串数组，可选是否在第一位添加一个自定义名字
@@ -35,8 +39,18 @@ namespace BatchTextureModifier
         /// <returns></returns>
         public static string[] EnumToNames(this Enum em, bool isAddFirstName = false, string? addFirstName = null)
         {
-            if (em == null) return null;
-            return GetCacheNames(em, isAddFirstName, addFirstName).Names;
+            if (em == null) return NullStrings;
+            return GetCacheData(em, isAddFirstName, addFirstName).DisplayNames!;
+        }
+
+        /// <summary>
+        /// 枚举直接转字符串数组，可选是否在第一位添加一个自定义名字
+        /// 可空类型使用
+        /// </summary>
+        /// <returns></returns>
+        public static string[] EnumToNames<T>(this Enum? em, bool isAddFirstName = false, string? addFirstName = null)
+        {
+            return GetCacheData(typeof(T), isAddFirstName, addFirstName).DisplayNames!;
         }
 
         /// <summary>
@@ -47,18 +61,11 @@ namespace BatchTextureModifier
         /// <returns></returns>
         public static string[] EnumToDescriptions(this Enum em)
         {
-            if (em == null) return null;
-            return GetCacheNames(em, false).Descriptions;
-        }
-
-        /// <summary>
-        /// 枚举直接转字符串数组，可选是否在第一位添加一个自定义名字
-        /// 可空类型使用
-        /// </summary>
-        /// <returns></returns>
-        public static string[] EnumToNames<T>(this Enum? em, bool isAddFirstName = false, string? addFirstName = null)
-        {
-            return GetCacheNames(typeof(T), isAddFirstName, addFirstName).Names;
+            if (em == null) return NullStrings;
+            ref CacheData data = ref GetCacheData(em, false);
+            return data.Descriptions ?? NullStrings;
+            //if(data.Descriptions)
+            //return GetCacheData(em, false).Descriptions!;
         }
 
         /// <summary>
@@ -66,10 +73,11 @@ namespace BatchTextureModifier
         /// </summary>
         /// <param name="em"></param>
         /// <returns></returns>
-        public static int EnumToIndex(this Enum? em, bool isAddFirstName = false, string? addFirstName = null)
+        public static int EnumToIndex(this Enum? em)
         {
             if (em == null) return 0;
-            return Array.IndexOf(GetCacheNames(em, isAddFirstName, addFirstName).Names, em.ToString());
+            //return Array.IndexOf(GetCacheData(em, isAddFirstName, addFirstName).Names!, em.ToString());
+            return GetCacheData(em).ToDisplayNameIndex(em);
         }
 
         /// <summary>
@@ -79,11 +87,9 @@ namespace BatchTextureModifier
         ///<param name="isAddFirstName">是否在第一位添加一个自定义名字，若为true且没有传入addFirstName，则在第一位添加一个默认名字</param>
         /// <param name="addFirstName">在第一位添加一个自定义名字，注：由于缓存存在，addFirstName 取决于第一次调用的传参</param>
         /// <returns></returns>
-        public static T IndexToEnum<T>(this int index, bool isAddFirstName = false, string? addFirstName = null) where T : struct, Enum
+        public static T IndexToEnum<T>(this int index) where T : struct, Enum
         {
-            object o = IndexToEnumNullable<T>(index, isAddFirstName, addFirstName);
-            if (o == null) return default(T);
-            return (T)o;
+            return IndexToEnumNullable<T>(index) ?? default(T);
         }
 
         /// <summary>
@@ -95,96 +101,38 @@ namespace BatchTextureModifier
         ///<param name="isAddFirstName">是否在第一位添加一个自定义名字，若为true且没有传入addFirstName，则在第一位添加一个默认名字</param>
         /// <param name="addFirstName">在第一位添加一个自定义名字，注：由于缓存存在，addFirstName 取决于第一次调用的传参</param>
         /// <returns></returns>
-        public static T? IndexToEnumNullable<T>(this int index, bool isAddFirstName = false, string? addFirstName = null) where T : struct, Enum
+        public static T? IndexToEnumNullable<T>(this int index) where T : struct, Enum
         {
-            Type type = typeof(T);
-            CacheData data = GetCacheNames(type, isAddFirstName, addFirstName);
-            object value;
-            if (Enum.TryParse(type, data.Names[index], out value))
-                return (T)value;
-            return null;// new Nullable<T>();
+            //Type type = typeof(T);
+            //CacheData data = GetCacheData(type, isAddFirstName, addFirstName);
+            //object? value;
+            //if (Enum.TryParse(type, data.Names![index], out value))
+            //    return (T)value!;
+            //return null;// new Nullable<T>();
+            return GetCacheData(typeof(T)).DisplayIndexToEnumNullable<T>(index);
         }
 
         /// <summary>
         /// 从缓存中取出名称列表，若不存在，则创建并缓存
         /// </summary>
-        private static CacheData GetCacheNames(Type enumType, bool isAddFirstName, string? addFirstName = null)
+        private static ref CacheData GetCacheData(Type enumType, bool isAddFirstName = false, string? addFirstName = null)
         {
-            Type type = enumType;
-            int index = _cacheDatas.FindIndex(x => x.EnumType == type);
-            if (index > -1) return _cacheDatas[index];
+            //Type type = enumType;
+            //查找是否存在缓存
+            int index = _cacheDatas.IndexOf(enumType);//_cacheDatas.FindIndex(x => x.EnumType == type);
+            if (index > -1) return ref _cacheDatas[index];
             //创建缓存
-            //string[] names = Enum.GetNames(type);
-            //if (isAddFirstName)
-            //{
-            //    string[] addNames = new string[names.Length + 1];
-            //    addNames[0] = string.IsNullOrEmpty(addFirstName) ? FirstName : addFirstName;
-            //    names.CopyTo(addNames, 1);
-            //    names = addNames;
-            //}
-            CacheData data = new CacheData(type);
-            data.InitNames(isAddFirstName, addFirstName);
-            data.InitDescrptions();
-            _cacheDatas.Add(data);
-            return data;
+            ref CacheData data = ref _cacheDatas.Next();
+            data.InitNames(enumType, isAddFirstName, addFirstName);
+            return ref data;
         }
 
         /// <summary>
         /// 从缓存中取出名称列表，若不存在，则创建并缓存
         /// </summary>
-        private static CacheData GetCacheNames(Enum em, bool isAddFirstName, string? addFirstName = null)
+        private static ref CacheData GetCacheData(Enum em, bool isAddFirstName = false, string? addFirstName = null)
         {
-            return GetCacheNames(em.GetType(), isAddFirstName, addFirstName);
-        }
-
-        private struct CacheData
-        {
-            public bool IsAddFirstName = false;
-            public Type EnumType;
-            public string[]? Names = null;
-            public string[]? Descriptions = null;
-
-            public CacheData(Type type)
-            {
-                EnumType = type;
-            }
-
-            public void InitNames(bool isAddFirstName, string? addFirstName = null)
-            {
-                IsAddFirstName = isAddFirstName;
-                Names = Enum.GetNames(EnumType);
-
-                if (isAddFirstName)
-                {
-                    string[] addNames = new string[Names.Length + 1];
-                    addNames[0] = string.IsNullOrEmpty(addFirstName) ? FirstName : addFirstName;
-                    Names.CopyTo(addNames, 1);
-                    Names = addNames;
-                }
-            }
-
-            public void InitDescrptions()
-            {
-                if (Names == null) InitNames(false);
-                Descriptions = new string[Names.Length];
-                for (int i = 0; i < Descriptions.Length; i++)
-                {
-                    if (IsAddFirstName && i == 0) continue;
-                    DescriptionAttribute? dss = GetAttr<DescriptionAttribute>(EnumType.GetField(Names[i]));
-                    if (dss == null)
-                    {
-                        Descriptions[i] = string.Empty;
-                        continue;
-                    }
-                    Descriptions[i] = dss.Description;
-                }
-            }
-
-            private T? GetAttr<T>(FieldInfo? fieldInfo) where T : Attribute
-            {
-                if (fieldInfo == null) return null;
-                return fieldInfo.GetCustomAttribute<T>();
-            }
+            return ref GetCacheData(em.GetType(), isAddFirstName, addFirstName);
         }
     }
 }

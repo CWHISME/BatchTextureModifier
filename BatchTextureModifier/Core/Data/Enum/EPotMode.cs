@@ -15,8 +15,7 @@ namespace BatchTextureModifier
     {
         ToNearest,
         ToLarger,
-        ToSmaller,
-        Max
+        ToSmaller
     }
 
 }
