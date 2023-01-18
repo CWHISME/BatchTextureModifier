@@ -5,16 +5,14 @@
 //用途：https://github.com/CWHISME/BatchTextureModifier.git
 //=========================================
 
-using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Reflection;
+using System.Text;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 
 namespace BatchTextureModifier
@@ -24,6 +22,7 @@ namespace BatchTextureModifier
 
         //数据
         private TexturesModifyData _convertData = new TexturesModifyData();
+        private LanguageConfig _lang = new LanguageConfig();
         //预览图片
         private byte[]? _previewImageBytes;
         //预览图片后缀
@@ -34,6 +33,8 @@ namespace BatchTextureModifier
 
         #region 数据绑定
         public TexturesModifyData ConvertData { get { return _convertData; } }
+        public LanguageConfig LangData { get { return _lang; } }
+
         public int Width { get { return _convertData.ScaleMode == EScaleMode.NotScale && PreviewInputBitmap != null ? (PreviewInputBitmap.PixelWidth) : _convertData.Width; } set { _convertData.Width = CheckHeightWidthOutbound(value); Notify("Width"); PreviewOutputImage(); } }
         public int Height { get { return _convertData.ScaleMode == EScaleMode.NotScale && PreviewInputBitmap != null ? (PreviewInputBitmap.PixelHeight) : _convertData.Height; } set { _convertData.Height = CheckHeightWidthOutbound(value); Notify("Height"); PreviewOutputImage(); } }
         public string? InputPath { get { return _convertData.InputPath; } set { _convertData.InputPath = value; PreviewInputPathImage(); Notify("InputPath", "HasExistInputPath", "Width", "Height"); } }
@@ -151,32 +152,32 @@ namespace BatchTextureModifier
         public System.Collections.ObjectModel.ObservableCollection<LogViewItem> OutputLogs { get { return _outputLogs; } }
         #endregion
 
-        #region 语言提示绑定
-        public float TooTipsTime { get { return 0; } }
-        public string StayInputFormatTips { get { return "在处理完毕后，保存的图片与输入格式保持一致。例如修改前是 *.png，修改后也是 *.png"; } }
-        public string OutputFormatComboBoxTips { get { return "选择输出的新图片格式，注意：TGA 不支持预览！"; } }
-        public string LangResamplerAlgorithmTips { get { return "缩放算法将会影响图片的缩放质量，默认的 Bicubic 就不错"; } }
-        public string LangOverideTips { get { return "该选项会直接覆盖源文件，并将源文件备份至『输出目录』"; } }
-        //private string[] _langScaleModeTips;
-        public string[] LangScaleModeTips { get { return ConvertData.ScaleMode.EnumToDescriptions(); } }
-        public string LangStayPixelTips { get { return "如果是放大操作，保持像素不变，否则等比放大"; } }
-        public string LangStayAlphaTips { get { return "如果是透明图片，保持透明通道不变"; } }
-        public string CompressionTips { get { return "压缩等级越高，最终文件大小越小(但是会更慢)"; } }
-        public string WebpEncodingMethodTips { get { return "编码等级越高，质量越好(但是会更慢)"; } }
-        public string QualityTips { get { return "质量等级，范围 0~100，越高质量越好，但是文件也会更大"; } }
-        public string PngFilterAlgorithmTips { get { return "会影响文件大小"; } }
-        #endregion
-
         public ViewHelper()
         {
             //注释日志
             LogManager.GetInstance.OnLogChange += OnLogChange;
+            LogManager.GetInstance.LogWarning("核心初始化...");
+            StringBuilder builder = new StringBuilder("系统信息：", 32);
+            builder.Append(Environment.OSVersion.ToString());
+            builder.Append("  ");
+            builder.Append(Environment.MachineName);
+            builder.Append("  ");
+            builder.AppendLine(Environment.Version.ToString());
+            builder.Append("初始化内存占用：");
+            builder.Append(CalcSize(Environment.WorkingSet).ToString());
+            builder.AppendLine("MB");
+            builder.Append("核心数：");
+            builder.Append(Environment.ProcessorCount.ToString());
+            builder.AppendLine("个");
+            builder.Append("批量处理图片时，最高将会开启 ");
+            builder.Append(Environment.ProcessorCount.ToString());
+            builder.AppendLine(" 个线程同时进行处理");
+            ConvertData.ProcessCount = Environment.ProcessorCount;
+            LogManager.GetInstance.LogWarning(builder.ToString());
         }
 
         private void OnLogChange(LogItem log)
         {
-            //System.Windows.Data.CollectionViewSource view = new System.Windows.Data.CollectionView();
-            //view.pus
             _outputLogs.Add(new LogViewItem(log));
             if (log.LogType == LogItem.ELogType.Error)
                 ShowErrorMessage(log.LogString);
@@ -257,7 +258,7 @@ namespace BatchTextureModifier
             {
                 try
                 {
-                    byte[] bytes = TexturesModifyUtility.ResizeTextures(_previewImageBytes, _convertData);
+                    byte[] bytes = TexturesModifyUtility.ModifyTextures(_previewImageBytes, _convertData);
                     File.WriteAllBytes(fileDialog.FileName, bytes);
                     LogManager.GetInstance.Log("手动保存图片：" + fileDialog.FileName);
                     ShowMessage("保存成功！路径：" + fileDialog.FileName);
@@ -267,6 +268,14 @@ namespace BatchTextureModifier
                     LogManager.GetInstance.LogError(ex.Message);
                 }
             }
+        }
+
+        /// <summary>
+        /// 开始执行批量处理
+        /// </summary>
+        public void StartBatchModify()
+        {
+
         }
 
         public void DisplayAboutInfo()
@@ -286,9 +295,8 @@ namespace BatchTextureModifier
         }
         #endregion
 
-        //==================Private=====================
+        //==================Private and tools=====================
 
-        #region Private
         private string SelectPath()
         {
             System.Windows.Forms.FolderBrowserDialog folderDialog = new System.Windows.Forms.FolderBrowserDialog();
@@ -364,7 +372,7 @@ namespace BatchTextureModifier
         private void PreviewOutputImage()
         {
             if (_previewImageBytes == null) return;
-            byte[] bytes = TexturesModifyUtility.ResizeTextures(_previewImageBytes, _convertData);
+            byte[] bytes = TexturesModifyUtility.ModifyTextures(_previewImageBytes, _convertData);
             OutputImageSize = CalcSize(bytes);
             PreviewOutputBitmap = LoadImage(bytes);
         }
@@ -372,7 +380,12 @@ namespace BatchTextureModifier
         private float CalcSize(byte[] bytes)
         {
             if (bytes == null) return 0;
-            return (float)(Math.Round(bytes.Length / 1024f / 1024, 2));
+            return CalcSize(bytes.Length);
+        }
+
+        private float CalcSize(long length)
+        {
+            return (float)(Math.Round(length / 1024f / 1024, 2));
         }
 
         private BitmapImage? LoadImage(byte[] texBytes)
@@ -391,26 +404,6 @@ namespace BatchTextureModifier
                 LogManager.GetInstance.LogError("LoadImage Failed:" + ex.Message);
                 return PreviewInputBitmap;
             }
-        }
-
-        /// <summary>
-        /// 检测 TextBox 输入是否是纯数字
-        /// </summary>
-        /// <param name="text"></param>
-        public int CheckTextNumberInput(TextBox text)
-        {
-            int val;
-            if (int.TryParse(text.Text, out val))
-            {
-                return val;
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(text.Text))
-                    ShowErrorMessage("请输入数字！");
-                text.Clear();
-            }
-            return val;
         }
 
         /// <summary>
@@ -442,6 +435,5 @@ namespace BatchTextureModifier
         {
             MessageBox.Show(str, "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-        #endregion
     }
 }

@@ -26,7 +26,7 @@ namespace BatchTextureModifier
 
         private ViewHelper _helper;
 
-        private ImageCompareViewWindow _imageCompareView;
+        private ImageCompareViewWindow? _imageCompareView;
         private WindowState _imageCompareViewState;
 
         public MainWindow()
@@ -36,32 +36,17 @@ namespace BatchTextureModifier
             _helper = new ViewHelper();
             DataContext = _helper;
 
-            //输出格式选择
-            //OutputFormatComboBox.ItemsSource = TexturesConvertUtility.Filter;
-            //OutputFormatComboBox.SelectedIndex = 0;
-            //OutputFormatComboBox.
-
-            //保持图片输入格式
-            //StayInputFormatToggle.Checked += OnStayInputFormatToggleCheck;
-            //StayInputFormatToggle.Unchecked += OnStayInputFormatToggleCheck;
-            //OnStayInputFormatToggleCheck(null, null);
+            LogViewer.SizeChanged += OnViewerChange;
         }
 
-        //private void OnStayInputFormatToggleCheck(object sender, RoutedEventArgs e)
-        //{
-        //    //bool stayCheck = (bool)StayInputFormatToggle.IsChecked;
-        //    OutputFormatComboBox.Visibility = (bool)StayInputFormatToggle.IsChecked ? Visibility.Collapsed : Visibility.Visible;
-        //    //if (stayCheck)
-        //    //{
-        //    //    OutputFormatComboBox.Text = "?";
-        //    //}
-        //    //else OutputFormatComboBox.SelectedIndex = 0;
-
-        //}
+        private void OnViewerChange(object sender, SizeChangedEventArgs e)
+        {
+            LogViewer.ScrollToEnd();
+        }
 
         private void DoProcessBtn_Click(object sender, RoutedEventArgs e)
         {
-            //TexturesCutCore.ResizeTextures(@"D:\MyOthers\BlogTexturesBackup\新建文件夹\6833939bly1giciusoyjnj219g0u0x56.jpg");
+            _helper.StartBatchModify();
         }
 
         /// <summary>
@@ -143,18 +128,6 @@ namespace BatchTextureModifier
             System.Diagnostics.Process.Start("explorer.exe", TexturesOutputPathText.Text);
         }
 
-        private void ScaleWidth_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            //_helper.ConvertData.Width = _helper.CheckTextNumberInput(ScaleWidth);
-            //_helper.PreviewOutputImage(PreviewOutputImage);
-        }
-
-        private void ScaleHeight_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            //_helper.ConvertData.Height = _helper.CheckTextNumberInput(ScaleHeight);
-            //_helper.PreviewOutputImage(PreviewOutputImage);
-        }
-
         private void OpenImageCompareViewBtn_Click(object sender, RoutedEventArgs e)
         {
             if (_imageCompareView == null)
@@ -162,7 +135,7 @@ namespace BatchTextureModifier
                 _imageCompareView = new ImageCompareViewWindow();
                 _imageCompareView.DataContext = _helper;
                 _imageCompareView.Closed += (o, x) => _imageCompareView = null;
-                _imageCompareView.StateChanged += (o, x) => _imageCompareViewState = (o as Window).WindowState == WindowState.Minimized ? _imageCompareViewState : (o as Window).WindowState;
+                _imageCompareView.StateChanged += (o, x) => _imageCompareViewState = (o as Window)?.WindowState == WindowState.Minimized ? _imageCompareViewState : (o as Window)?.WindowState ?? WindowState.Normal;
                 _imageCompareViewState = _imageCompareView.WindowState;
                 _imageCompareView.Show();
                 return;

@@ -21,7 +21,7 @@ namespace BatchTextureModifier
         public int EntropyPasses { get; set; } = 1;
         public int SpatialNoiseShaping { get; set; } = 50;
         public int FilterStrength { get; set; } = 60;
-        public WebpTransparentColorMode TransparentColorMode { get; set; } = WebpTransparentColorMode.Preserve;
+        public WebpTransparentColorMode TransparentColorMode { get; set; } = WebpTransparentColorMode.Clear;
 
         /// <summary>
         /// 是否无损，默认有损

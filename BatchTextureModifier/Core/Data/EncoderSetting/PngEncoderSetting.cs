@@ -19,7 +19,7 @@ namespace BatchTextureModifier
         public PngColorType? ColorType { get; set; }
         public PngFilterMethod? FilterMethod { get; set; }
         public PngCompressionLevel CompressionLevel { get; set; } = PngCompressionLevel.DefaultCompression;
-        public PngTransparentColorMode TransparentColorMode { get; set; } = PngTransparentColorMode.Preserve;
+        public PngTransparentColorMode TransparentColorMode { get; set; } = PngTransparentColorMode.Clear;
 
         ////png—πÀıµ»º∂
         //private string[] _pngCompressionLevelNames;

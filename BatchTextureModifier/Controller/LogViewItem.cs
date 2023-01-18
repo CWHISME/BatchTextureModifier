@@ -22,7 +22,7 @@ namespace BatchTextureModifier
                 switch (_log.LogType)
                 {
                     case LogItem.ELogType.Warning:
-                        return Brushes.Yellow;
+                        return Brushes.Orange;
                     case LogItem.ELogType.Error:
                         return Brushes.Red;
                     case LogItem.ELogType.Log:

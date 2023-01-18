@@ -5,6 +5,8 @@
 //用途：https://github.com/CWHISME/BatchTextureModifier.git
 //=========================================
 
+using System;
+
 namespace BatchTextureModifier
 {
     public class LogItem
@@ -16,7 +18,7 @@ namespace BatchTextureModifier
 
         public LogItem(ELogType type, string str)
         {
-            _logStr = str;
+            _logStr = DateTime.Now.ToString("[HH:mm:ss]") + str;
             _logType = type;
         }
 

@@ -13,6 +13,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace BatchTextureModifier
 {
@@ -50,7 +52,7 @@ namespace BatchTextureModifier
             ResamplerAlgorithmNames = new List<string>(prt.Length);
             foreach (var item in prt)
             {
-                IResampler resampler = item.GetValue(null) as IResampler;
+                IResampler? resampler = item.GetValue(null) as IResampler;
                 if (resampler == null) continue;
                 ResamplerAlgorithms.Add(resampler);
                 ResamplerAlgorithmNames.Add(item.Name);
@@ -94,16 +96,7 @@ namespace BatchTextureModifier
             return Encoder[index];
         }
 
-        public static void ResizeTextures(string path, TexturesModifyData data)
-        {
-            using (Image image = Image.Load(path))
-            {
-                image.Mutate(x => x.Resize(data.Width, data.Height));
-                image.Save(Path.Combine(Path.GetDirectoryName(path), "[Resize]" + Path.GetFileName(path)));
-            }
-        }
-
-        public static byte[] ResizeTextures(byte[] bytes, TexturesModifyData data)
+        public static byte[] ModifyTextures(byte[] bytes, TexturesModifyData data)
         {
             if (data.ScaleMode == EScaleMode.NotScale && data.OutputEncoder == null) return bytes;
             try
@@ -178,6 +171,56 @@ namespace BatchTextureModifier
                 return null;
             }
         }
+
+        private static CancellationTokenSource _cancellation;
+        private static TexturesModifyData _modifyDataConfig;
+
+        /// <summary>
+        /// 执行批量修改
+        /// </summary>
+        /// <param name="data"></param>
+        public static async void StartBatchModify(TexturesModifyData data)
+        {
+            _modifyDataConfig = data;
+            _cancellation = new CancellationTokenSource();
+            for (int i = 0; i < data.ProcessCount; i++)
+            {
+                Task.Run(ModifyImagesFunc, _cancellation.Token);
+            }
+            await Task.Run(EnumerateImagesFunc, _cancellation.Token);
+        }
+
+        /// <summary>
+        /// 枚举目录线程
+        /// </summary>
+        private static async void EnumerateImagesFunc()
+        {
+            try
+            {
+                EnumerationOptions opt = new EnumerationOptions();
+                opt.RecurseSubdirectories = true;
+                foreach (var pattern in Filter)
+                {
+                    //foreach (var item in Directory.EnumerateFiles(dirPath, pattern, opt))
+                    //{
+                    //    return item;
+                    //}
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogManager.GetInstance.LogError(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 处理图片线程
+        /// </summary>
+        private static void ModifyImagesFunc()
+        {
+
+        }
+
 
         private static IImageEncoder GetDefaultEncoder()
         {

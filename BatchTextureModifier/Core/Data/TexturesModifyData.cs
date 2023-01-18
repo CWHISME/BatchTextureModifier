@@ -12,6 +12,12 @@ namespace BatchTextureModifier
 {
     public class TexturesModifyData
     {
+
+        /// <summary>
+        /// 批量处理时的核心数目
+        /// </summary>
+        public int ProcessCount;
+
         /// <summary>
         /// 修改后的宽度
         /// </summary>

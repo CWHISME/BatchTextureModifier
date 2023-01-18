@@ -10,17 +10,17 @@
     <Window.Resources>
         <local:MultiContentConverter x:Key="MultiContentConverter" />
         <Style TargetType="ComboBox">
-            <Setter Property="ToolTipService.InitialShowDelay" Value="{Binding TooTipsTime}"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="{Binding LangData.TooTipsTime}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
         <Style TargetType="CheckBox">
-            <Setter Property="ToolTipService.InitialShowDelay" Value="{Binding TooTipsTime}"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="{Binding LangData.TooTipsTime}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
         <Style TargetType="TextBlock">
-            <Setter Property="ToolTipService.InitialShowDelay" Value="{Binding TooTipsTime}"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="{Binding LangData.TooTipsTime}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <Style TargetType="TextBox">
@@ -64,46 +64,46 @@
                             <StackPanel Orientation="Horizontal">
                                 <GroupBox Header="输出格式：">
                                     <StackPanel>
-                                        <StackPanel Orientation="Horizontal" Height="26">
-                                            <CheckBox Name="StayInputFormatToggle" IsChecked="{Binding StayOldFormat}" Content="保留原格式" ToolTip="{Binding StayInputFormatTips}" />
-                                            <ComboBox Name="OutputFormatComboBox" ToolTip="{Binding OutputFormatComboBoxTips}" ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}" Visibility="{c:Binding ElementName=StayInputFormatToggle,Path=!IsChecked,FalseToVisibility=Collapsed}" Width="80" Margin="5,0,0,0"  />
+                                        <StackPanel Orientation="Horizontal">
+                                            <CheckBox Name="StayInputFormatToggle" IsChecked="{Binding StayOldFormat}" Content="保留原格式" ToolTip="{Binding LangData.StayInputFormatTips}" />
+                                            <ComboBox Name="OutputFormatComboBox" ToolTip="{Binding LangData.OutputFormatComboBoxTips}" ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}" Visibility="{c:Binding ElementName=StayInputFormatToggle,Path=!IsChecked,FalseToVisibility=Collapsed}" Width="80" Margin="5,0,0,0"  />
+                                            <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                                                <CheckBox Content="保持透明" Margin="5,0,0,0" IsChecked="{Binding StayAlpha}" ToolTip="{Binding LangData.LangStayAlphaTips}" Visibility="{c:Binding 'IsShowStayAlpha',FalseToVisibility=Collapsed}"/>
+                                                <CheckBox Content="无损格式" Margin="5,5,0,0" IsChecked="{Binding WebpIsLossless}" Visibility="{c:Binding 'IsWebp',FalseToVisibility=Collapsed}"/>
+                                                <!--<CheckBox  Margin="5,5,0,0" Content="{Binding ConvertData.TestStr,Mode=OneWay}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>-->
+                                            </StackPanel>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                             <StackPanel Orientation="Horizontal" Visibility="{c:Binding IsSupportQuality,FalseToVisibility=Collapsed}" Height="26">
-                                                <TextBlock Text="质量：" ToolTip="{Binding QualityTips}"/>
+                                                <TextBlock Text="质量：" ToolTip="{Binding LangData.QualityTips}"/>
                                                 <TextBox Width="50" Text="{Binding Quality}" AllowDrop="True"/>
                                                 <TextBlock Text="%" />
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Visibility="{c:Binding IsWebp,FalseToVisibility=Collapsed}" Margin="5,0,0,0" >
-                                                <TextBlock Text="编码方式：" ToolTip="{Binding WebpEncodingMethodTips}"/>
-                                                <ComboBox ItemsSource="{Binding WebpEncodingMethods}" SelectedIndex="{Binding WebpEncodingMethodsIndex}" Width="80" ToolTip="{Binding WebpEncodingMethodTips}"/>
+                                                <TextBlock Text="编码方式：" ToolTip="{Binding LangData.WebpEncodingMethodTips}"/>
+                                                <ComboBox ItemsSource="{Binding WebpEncodingMethods}" SelectedIndex="{Binding WebpEncodingMethodsIndex}" Width="80" ToolTip="{Binding LangData.WebpEncodingMethodTips}"/>
                                             </StackPanel>
                                             <StackPanel Orientation="Vertical" Visibility="{c:Binding IsPng,FalseToVisibility=Collapsed}" Margin="5,0,0,0">
                                                 <DockPanel>
                                                     <DockPanel >
-                                                        <TextBlock Text="压缩等级：" ToolTip="{Binding CompressionTips}"/>
-                                                        <ComboBox ItemsSource="{Binding PngCompressionLevels}" SelectedIndex="{Binding PngCompressionLevelsIndex}" Width="80" ToolTip="{Binding CompressionTips}" HorizontalAlignment="Right"/>
+                                                        <TextBlock Text="压缩等级：" ToolTip="{Binding LangData.CompressionTips}"/>
+                                                        <ComboBox ItemsSource="{Binding PngCompressionLevels}" SelectedIndex="{Binding PngCompressionLevelsIndex}" Width="80" ToolTip="{Binding LangData.CompressionTips}" HorizontalAlignment="Right"/>
                                                     </DockPanel>
                                                     <DockPanel  Margin="5,0,0,0">
                                                         <TextBlock Text="过滤算法：" />
-                                                        <ComboBox ItemsSource="{Binding PngPngFilterMethods}" SelectedIndex="{Binding PngPngFilterMethodsIndex}" Width="80" ToolTip="{Binding PngFilterAlgorithmTips}" HorizontalAlignment="Right"/>
+                                                        <ComboBox ItemsSource="{Binding PngPngFilterMethods}" SelectedIndex="{Binding PngPngFilterMethodsIndex}" Width="80" ToolTip="{Binding LangData.PngFilterAlgorithmTips}" HorizontalAlignment="Right"/>
                                                     </DockPanel>
                                                 </DockPanel>
                                                 <DockPanel >
                                                     <DockPanel  Margin="0,5,0,0">
                                                         <TextBlock Text="颜色类型：" />
-                                                        <ComboBox ItemsSource="{Binding PngPngColorType}" SelectedIndex="{Binding PngPngColorTypeIndex}" Width="80" ToolTip="{Binding PngFilterAlgorithmTips}" HorizontalAlignment="Right"/>
+                                                        <ComboBox ItemsSource="{Binding PngPngColorType}" SelectedIndex="{Binding PngPngColorTypeIndex}" Width="80" ToolTip="{Binding LangData.PngFilterAlgorithmTips}" HorizontalAlignment="Right"/>
                                                     </DockPanel>
                                                     <DockPanel  Margin="5,5,0,0">
                                                         <TextBlock Text="位深度：" />
                                                         <ComboBox ItemsSource="{Binding PngEncodingBitDepth}" SelectedIndex="{Binding PngEncodingBitDepthIndex}" Width="80" HorizontalAlignment="Right"/>
                                                     </DockPanel>
                                                 </DockPanel>
-                                            </StackPanel>
-                                            <StackPanel>
-                                                <CheckBox Content="保持透明" Margin="5,0,0,0" IsChecked="{Binding StayAlpha}" ToolTip="{Binding LangStayAlphaTips}" Visibility="{c:Binding 'IsShowStayAlpha',FalseToVisibility=Collapsed}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
-                                                <CheckBox Content="无损格式" Margin="5,5,0,0" IsChecked="{Binding WebpIsLossless}" Visibility="{c:Binding 'IsWebp',FalseToVisibility=Collapsed}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
-                                                <!--<CheckBox Content="测试-保持Alpha" Margin="5,5,0,0" DataContext="{Binding ConvertData}" IsChecked="{Binding IsSupportAlphaFormat,Mode=OneWay}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>-->
                                             </StackPanel>
                                         </StackPanel>
                                     </StackPanel>
@@ -114,7 +114,7 @@
                                             <ComboBox Name="ScaleComboBox" ItemsSource="{Binding ScaleModes}" SelectedIndex="{Binding ScaleModeIndex}" Width="100">
                                                 <ComboBox.ToolTip>
                                                     <!--<StackPanel Orientation="Vertical">-->
-                                                    <ListBox ItemsSource="{Binding LangScaleModeTips}"/>
+                                                    <ListBox ItemsSource="{Binding LangData.LangScaleModeTips}"/>
                                                     <!--<TextBlock Text="拉伸：直接缩放，会有拉伸"/>
                                                     <TextBlock Text="比例缩放：不足之处使用透明度填充"/>
                                                     <TextBlock Text="裁剪：不足处直接裁剪"/>-->
@@ -123,13 +123,13 @@
                                             </ComboBox>
                                             <StackPanel Name="ScaleParamsPanel" Orientation="Horizontal" IsEnabled="{Binding ShowPixelSetting}" HorizontalAlignment="Right">
                                                 <Label Content="宽" Margin="0,0,0,0"/>
-                                                <TextBox Name="ScaleWidth" Text="{Binding Width}" Width="80"  VerticalContentAlignment="Center" PreviewTextInput="OnPreviewTextInputLimitNumber" InputScope="Number" TextChanged="ScaleWidth_TextChanged"/>
+                                                <TextBox Name="ScaleWidth" Text="{Binding Width}" Width="80"  VerticalContentAlignment="Center" PreviewTextInput="OnPreviewTextInputLimitNumber" InputScope="Number"/>
                                                 <Label Content="高" Margin="0,0,0,0"/>
-                                                <TextBox Name="ScaleHeight" Text="{Binding Height}" Width="80" VerticalContentAlignment="Center" PreviewTextInput="OnPreviewTextInputLimitNumber" InputScope="Number" TextChanged="ScaleHeight_TextChanged"/>
+                                                <TextBox Name="ScaleHeight" Text="{Binding Height}" Width="80" VerticalContentAlignment="Center" PreviewTextInput="OnPreviewTextInputLimitNumber" InputScope="Number"/>
                                             </StackPanel>
                                         </DockPanel>
                                         <StackPanel Orientation="Horizontal" >
-                                            <CheckBox Content="保持像素"  Margin="5,0,0,0"  IsChecked="{Binding StayPixel}" ToolTip="{Binding LangStayPixelTips}" Visibility="{c:Binding 'IsShowStayPixel',FalseToVisibility=Collapsed}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
+                                            <CheckBox Content="保持像素"  Margin="5,0,0,0"  IsChecked="{Binding StayPixel}" ToolTip="{Binding LangData.LangStayPixelTips}" Visibility="{c:Binding 'IsShowStayPixel',FalseToVisibility=Collapsed}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
                                             <StackPanel  Orientation="Horizontal"  Visibility="{c:Binding 'IsDisplayImageScaleAnchorPositionModes',FalseToVisibility=Collapsed}">
                                                 <Label Content="停靠模式:" />
                                                 <ComboBox ItemsSource="{Binding ImageScaleAnchorPositionModes}" SelectedIndex="{Binding ImageScaleAnchorPositionModeIndex}" Width="100"/>
@@ -142,7 +142,7 @@
                                             </StackPanel>
                                             <StackPanel  Orientation="Horizontal" IsEnabled="{c:Binding 'ScaleModeIndex>0'}">
                                                 <Label Content="缩放算法:" Margin="0,0,0,0"/>
-                                                <ComboBox ItemsSource="{Binding ResamplerAlgorithmNames}" SelectedIndex="{Binding ResamplerAlgorithmIndex}" Width="100" ToolTip="{Binding LangResamplerAlgorithmTips}" VerticalContentAlignment="Center"/>
+                                                <ComboBox ItemsSource="{Binding ResamplerAlgorithmNames}" SelectedIndex="{Binding ResamplerAlgorithmIndex}" Width="100" ToolTip="{Binding LangData.LangResamplerAlgorithmTips}" VerticalContentAlignment="Center"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </StackPanel>
@@ -150,7 +150,7 @@
                                 </GroupBox>
                                 <GroupBox Header="文件设置：">
                                     <StackPanel Orientation="Vertical">
-                                        <CheckBox Content="直接覆盖" Margin="6" IsChecked="{Binding IsDirectOverideFile}" ToolTip="{Binding LangOverideTips}" VerticalAlignment="Center" VerticalContentAlignment="Center" />
+                                        <CheckBox Content="直接覆盖" Margin="6" IsChecked="{Binding IsDirectOverideFile}" ToolTip="{Binding LangData.LangOverideTips}" VerticalAlignment="Center" VerticalContentAlignment="Center" />
                                         <CheckBox Content="备份文件" Margin="6" Visibility="{c:Binding IsDirectOverideFile,FalseToVisibility=Collapsed}" IsChecked="{Binding IsBackupInputFile}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
                                     </StackPanel>
                                 </GroupBox>
@@ -161,7 +161,7 @@
             </GroupBox>
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right">
                 <TextBlock  Name="AboutBtn" Text="Made by wangjiaying" ToolTip="点我 (‾◡◝)" TextDecorations="Underline" MouseDown="AboutBtn_Click"   />
-                <TextBlock  Name="OpensourceBtn" Text="(Git)" ToolTip="点点点... ᓚᘏᗢ" TextDecorations="Underline" MouseDown="OpensourceBtn_Click"  Margin="0,0,5,0" Foreground="Blue"  />
+                <TextBlock  Name="OpensourceBtn" Text="(ᓚᘏᗢ)" ToolTip="点点点... ᓚᘏᗢ" TextDecorations="Underline" MouseDown="OpensourceBtn_Click"  Margin="0,0,5,0" Foreground="Blue"  />
             </StackPanel>
             <GroupBox Header="结果"  BorderBrush="Black" Margin="5,0,5,5" BorderThickness="1" >
                 <TabControl x:Name="OutPutTabControl">
@@ -211,13 +211,16 @@
                     </TabItem>
                     <TabItem Header="输出">
                         <Grid Background="White">
-                            <ListBox IsEnabled="False" ItemsSource="{Binding OutputLogs}">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Content}" Foreground="{Binding ForgroundColor}"/>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                            <ScrollViewer Name="LogViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                                <ListBox IsEnabled="False" ItemsSource="{Binding OutputLogs}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Content}" Foreground="{Binding ForgroundColor}"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </ScrollViewer>
+                            <!--<TextBlock Text="啊啊啊啊啊啊" Foreground="Orange" VerticalAlignment="Bottom" TextWrapping="NoWrap" TextAlignment="Center" HorizontalAlignment="Left" FontWeight="Normal"/>-->
                         </Grid>
                     </TabItem>
                 </TabControl>
