@@ -20,5 +20,10 @@ namespace BatchTextureModifier
         {
             return new TgaEncoder();
         }
+
+        string IEncoderSetting.GetFileSuffix()
+        {
+            return ".tga";
+        }
     }
 }

@@ -16,8 +16,10 @@ namespace BatchTextureModifier
     public sealed class JpegEncoderSetting : IEncoderSetting, IQualitySetting
     {
 
-        public int Quality { get; set; }
-        public bool Interleaved { get; set; }
+        public int Quality { get; set; } = 100;
+        public bool Interleaved { get; set; } = false;
+
+        public bool IsSupportQuality => true;
 
         IImageEncoder IEncoderSetting.CraeteEncoder()
         {
@@ -26,6 +28,11 @@ namespace BatchTextureModifier
                 Quality = Quality,
                 Interleaved = Interleaved
             };
+        }
+
+        string IEncoderSetting.GetFileSuffix()
+        {
+            return ".jpg";
         }
     }
 }

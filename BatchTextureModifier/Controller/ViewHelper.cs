@@ -53,7 +53,7 @@ namespace BatchTextureModifier
         public bool StayOldFormat { get { return _stayOldFormat; } set { _stayOldFormat = value; OutputFormatIndex = value ? -1 : 0; Notify("StayOldFormat", "OutputFormatIndex"); } }
         //选择的输出格式下标
         private int _outputFormatIndex;
-        public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputEncoder = TexturesModifyUtility.GetFormatByIndex(value); Notify("IsShowQualityTextBox", "Quality", "IsWebp", "IsPng", "WebpEncodingMethodsIndex", "PngCompressionLevelsIndex", "PngEncodingBitDepthIndex", "PngPngColorTypeIndex", "IsShowStayAlpha", "StayAlpha"); PreviewOutputImage(); } }
+        public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputEncoder = TexturesModifyUtility.GetFormatByIndex(value); Notify("IsShowQualityTextBox", "IsSupportQuality", "Quality", "IsWebp", "IsPng", "IsJpegEncoder", "WebpEncodingMethodsIndex", "PngCompressionLevelsIndex", "PngEncodingBitDepthIndex", "PngPngColorTypeIndex", "IsShowStayAlpha", "StayAlpha"); PreviewOutputImage(); } }
 
         //==================图像导出设置==================
         public PngEncoderSetting PngSetting { get { return (PngEncoderSetting)TexturesModifyUtility.Encoder[0]; } }
@@ -65,11 +65,17 @@ namespace BatchTextureModifier
 
         //Webp格式转换方法==========
         //private string[] _webpEncodingMethods;
+        public bool IsWebp { get { return _convertData.OutputEncoder is WebpEncoderSetting; } }
         public string[] WebpEncodingMethods { get { return WebpSetting.Method.EnumToNames(); } }
         public int WebpEncodingMethodsIndex { get { return WebpSetting.Method.EnumToIndex(); } set { WebpSetting.Method = value.IndexToEnum<WebpEncodingMethod>(); PreviewOutputImage(); } }
-        public bool WebpIsLossless { get { return WebpSetting.IsLossless; } set { WebpSetting.IsLossless = value; PreviewOutputImage(); } }
+        public bool WebpIsLossless { get { return WebpSetting.IsLossless; } set { WebpSetting.IsLossless = value; Notify("IsSupportQuality"); PreviewOutputImage(); } }
+
+        //JPEG格式转换方法==========
+        public bool IsJpegEncoder { get { return _convertData.OutputEncoder is JpegEncoderSetting; } }
+        public bool JpgIsInterleaved { get { return JpegSetting.Interleaved; } set { JpegSetting.Interleaved = value; PreviewOutputImage(); } }
 
         //Png格式转换方法==========
+        public bool IsPng { get { return _convertData.OutputEncoder is PngEncoderSetting; } }
         //png压缩等级
         public string[] PngCompressionLevels { get { return PngSetting.CompressionLevel.EnumToNames(); } }
         public int PngCompressionLevelsIndex { get { return PngSetting.CompressionLevel.EnumToIndex(); } set { PngSetting.CompressionLevel = value.IndexToEnum<PngCompressionLevel>(); PreviewOutputImage(); } }
@@ -87,11 +93,8 @@ namespace BatchTextureModifier
         public int PngPngColorTypeIndex { get { return PngSetting.ColorType.EnumToIndex(); } set { PngSetting.ColorType = value.IndexToEnumNullable<PngColorType>(); PreviewOutputImage(); } }
 
         //是否显示质量设置
-        public bool IsSupportQuality { get { return _convertData.OutputEncoder is IQualitySetting; } }
-        public bool IsWebp { get { return _convertData.OutputEncoder is WebpEncoderSetting; } }
-        public bool IsPng { get { return _convertData.OutputEncoder is PngEncoderSetting; } }
-
-        public int Quality { get { return IsSupportQuality ? ((IQualitySetting)_convertData.OutputEncoder!).Quality : -1; } set { value = Math.Clamp(value, 0, 100); ((IQualitySetting)_convertData.OutputEncoder!).Quality = value; PreviewOutputImage(); } }
+        public bool IsSupportQuality { get { return (_convertData.OutputEncoder as IQualitySetting)?.IsSupportQuality ?? false; } }
+        public int Quality { get { return IsSupportQuality ? ((IQualitySetting)_convertData.OutputEncoder!).Quality : -1; } set { value = Math.Clamp(value, 1, 100); ((IQualitySetting)_convertData.OutputEncoder!).Quality = value; PreviewOutputImage(); } }
 
         //============================================
 
@@ -150,6 +153,7 @@ namespace BatchTextureModifier
         //日志显示
         private System.Collections.ObjectModel.ObservableCollection<LogViewItem> _outputLogs = new System.Collections.ObjectModel.ObservableCollection<LogViewItem>();
         public System.Collections.ObjectModel.ObservableCollection<LogViewItem> OutputLogs { get { return _outputLogs; } }
+        public LogViewItem LastLogItem { get { return _outputLogs[_outputLogs.Count - 1]; } }
         #endregion
 
         public ViewHelper()
@@ -172,7 +176,7 @@ namespace BatchTextureModifier
             builder.Append("批量处理图片时，最高将会开启 ");
             builder.Append(Environment.ProcessorCount.ToString());
             builder.AppendLine(" 个线程同时进行处理");
-            ConvertData.ProcessCount = Environment.ProcessorCount;
+            ConvertData.ProcessCount = Environment.ProcessorCount - 1;
             LogManager.GetInstance.LogWarning(builder.ToString());
         }
 
@@ -181,7 +185,7 @@ namespace BatchTextureModifier
             _outputLogs.Add(new LogViewItem(log));
             if (log.LogType == LogItem.ELogType.Error)
                 ShowErrorMessage(log.LogString);
-            Notify("OutputLogs");
+            Notify("OutputLogs", "LastLogItem");
         }
 
         #region 绑定通知
@@ -270,12 +274,18 @@ namespace BatchTextureModifier
             }
         }
 
+        private bool _isNoneBatchProcess = true;
+        public bool CanBatchProcess { get { return _isNoneBatchProcess; } }
         /// <summary>
         /// 开始执行批量处理
         /// </summary>
-        public void StartBatchModify()
+        public async void StartBatchModify()
         {
-
+            _isNoneBatchProcess = true;
+            Notify("CanBatchProcess");
+            await TexturesModifyUtility.StartBatchModify(ConvertData);
+            _isNoneBatchProcess = false;
+            Notify("CanBatchProcess");
         }
 
         public void DisplayAboutInfo()
@@ -372,8 +382,16 @@ namespace BatchTextureModifier
         private void PreviewOutputImage()
         {
             if (_previewImageBytes == null) return;
-            byte[] bytes = TexturesModifyUtility.ModifyTextures(_previewImageBytes, _convertData);
-            OutputImageSize = CalcSize(bytes);
+            byte[]? bytes = null;
+            try
+            {
+                bytes = TexturesModifyUtility.ModifyTextures(_previewImageBytes, _convertData);
+                OutputImageSize = CalcSize(bytes);
+            }
+            catch (Exception ex)
+            {
+                LogManager.GetInstance.LogError(ex.Message);
+            }
             PreviewOutputBitmap = LoadImage(bytes);
         }
 
@@ -388,7 +406,7 @@ namespace BatchTextureModifier
             return (float)(Math.Round(length / 1024f / 1024, 2));
         }
 
-        private BitmapImage? LoadImage(byte[] texBytes)
+        private BitmapImage? LoadImage(byte[]? texBytes)
         {
             if (texBytes == null) return null;
             BitmapImage bitmap = new BitmapImage();

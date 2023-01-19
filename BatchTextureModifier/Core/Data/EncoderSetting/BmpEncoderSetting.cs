@@ -23,5 +23,10 @@ namespace BatchTextureModifier
         {
             return new BmpEncoder() { SupportTransparency = SupportTransparency };
         }
+
+        string IEncoderSetting.GetFileSuffix()
+        {
+            return ".bmp";
+        }
     }
 }

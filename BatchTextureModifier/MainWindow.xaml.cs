@@ -44,7 +44,8 @@ namespace BatchTextureModifier
             LogViewer.ScrollToEnd();
         }
 
-        private void DoProcessBtn_Click(object sender, RoutedEventArgs e)
+        CancellationTokenSource? _cancel;
+        private async void DoProcessBtn_Click(object sender, RoutedEventArgs e)
         {
             _helper.StartBatchModify();
         }
@@ -75,6 +76,14 @@ namespace BatchTextureModifier
         }
 
         /// <summary>
+        /// 最新一个日志按钮
+        /// </summary>
+        private void NewestLogBtn_Click(object sender, RoutedEventArgs e)
+        {
+            OutPutTabControl.SelectedIndex = 1;
+        }
+
+        /// <summary>
         /// 关于按钮
         /// </summary>
         private void AboutBtn_Click(object sender, RoutedEventArgs e)
@@ -90,33 +99,33 @@ namespace BatchTextureModifier
             _helper.DisplayGitInfo();
         }
 
-        /// <summary>
-        /// 改变输入路径
-        /// </summary>
-        private void OnInputPathChange(object sender, TextChangedEventArgs e)
-        {
-            ValidePath(TexturesInputPathText.Text, OpenInputPathBtn);
-        }
+        ///// <summary>
+        ///// 改变输入路径
+        ///// </summary>
+        //private void OnInputPathChange(object sender, TextChangedEventArgs e)
+        //{
+        //    ValidePath(TexturesInputPathText.Text, OpenInputPathBtn);
+        //}
 
-        /// <summary>
-        /// 改变输出路径
-        /// </summary>
-        private void OnOutputPathChange(object sender, TextChangedEventArgs e)
-        {
-            ValidePath(TexturesOutputPathText.Text, OpenOutputPathBtn);
-        }
+        ///// <summary>
+        ///// 改变输出路径
+        ///// </summary>
+        //private void OnOutputPathChange(object sender, TextChangedEventArgs e)
+        //{
+        //    ValidePath(TexturesOutputPathText.Text, OpenOutputPathBtn);
+        //}
 
-        private void ValidePath(string path, Button effectBtn)
-        {
-            if (Directory.Exists(path))
-            {
-                effectBtn.IsEnabled = true;
-            }
-            else
-            {
-                effectBtn.IsEnabled = false;
-            }
-        }
+        //private void ValidePath(string path, Button effectBtn)
+        //{
+        //    if (Directory.Exists(path))
+        //    {
+        //        effectBtn.IsEnabled = true;
+        //    }
+        //    else
+        //    {
+        //        effectBtn.IsEnabled = false;
+        //    }
+        //}
 
         private void OpenInputPathBtn_Click(object sender, RoutedEventArgs e)
         {

@@ -12,6 +12,6 @@ namespace BatchTextureModifier
     public interface IEncoderSetting
     {
         public IImageEncoder CraeteEncoder();
-
+        public string GetFileSuffix();
     }
 }

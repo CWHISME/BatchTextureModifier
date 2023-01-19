@@ -9,6 +9,7 @@ namespace BatchTextureModifier
 {
     public interface IQualitySetting
     {
+        public bool IsSupportQuality { get; }
         public int Quality { get; set; }
     }
 }

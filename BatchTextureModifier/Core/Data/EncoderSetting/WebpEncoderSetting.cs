@@ -16,7 +16,7 @@ namespace BatchTextureModifier
     public sealed class WebpEncoderSetting : IEncoderSetting, ISupportAlphaSetting, IQualitySetting
     {
         public WebpFileFormatType? FileFormat { get; set; } = WebpFileFormatType.Lossy;
-        public int Quality { get; set; } = 75;
+        public int Quality { get; set; } = 100;
         public WebpEncodingMethod Method { get; set; } = WebpEncodingMethod.Default;
         public int EntropyPasses { get; set; } = 1;
         public int SpatialNoiseShaping { get; set; } = 50;
@@ -27,6 +27,9 @@ namespace BatchTextureModifier
         /// 是否无损，默认有损
         /// </summary>
         public bool IsLossless { get { return FileFormat == WebpFileFormatType.Lossless; } set { FileFormat = value ? WebpFileFormatType.Lossless : WebpFileFormatType.Lossy; } }
+
+        public bool IsSupportQuality => FileFormat == WebpFileFormatType.Lossy;
+
         ///// <summary>
         ///// 编码方式，等级
         ///// </summary>
@@ -62,6 +65,11 @@ namespace BatchTextureModifier
                 TransparentColorMode = TransparentColorMode,
                 UseAlphaCompression = false
             };
+        }
+
+        string IEncoderSetting.GetFileSuffix()
+        {
+            return ".webp";
         }
 
         bool ISupportAlphaSetting.IsAllowAlpha()

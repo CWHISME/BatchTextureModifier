@@ -20,5 +20,10 @@ namespace BatchTextureModifier
         {
             return new GifEncoder();
         }
+
+        string IEncoderSetting.GetFileSuffix()
+        {
+            return ".gif";
+        }
     }
 }

@@ -65,6 +65,11 @@ namespace BatchTextureModifier
             };
         }
 
+        string IEncoderSetting.GetFileSuffix()
+        {
+            return ".png";
+        }
+
         bool ISupportAlphaSetting.IsAllowAlpha()
         {
             return TransparentColorMode == PngTransparentColorMode.Preserve;

@@ -10,11 +10,13 @@ using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Transforms;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Markup;
 
 namespace BatchTextureModifier
 {
@@ -98,127 +100,177 @@ namespace BatchTextureModifier
 
         public static byte[] ModifyTextures(byte[] bytes, TexturesModifyData data)
         {
-            if (data.ScaleMode == EScaleMode.NotScale && data.OutputEncoder == null) return bytes;
-            try
+            //if (data.ScaleMode == EScaleMode.NotScale && data.OutputEncoder == null) return bytes;
+            //try
+            //{
+            //Image<Rgba32> 
+            SixLabors.ImageSharp.Processing.ResizeMode padMode = data.StayPixel ? SixLabors.ImageSharp.Processing.ResizeMode.BoxPad : SixLabors.ImageSharp.Processing.ResizeMode.Pad;
+            using (Image image = Image.Load(bytes))
             {
-                //Image<Rgba32> 
-                SixLabors.ImageSharp.Processing.ResizeMode padMode = data.StayPixel ? SixLabors.ImageSharp.Processing.ResizeMode.BoxPad : SixLabors.ImageSharp.Processing.ResizeMode.Pad;
-                using (Image image = Image.Load(bytes))
-                {
-                    if (data.ScaleMode != EScaleMode.NotScale)
-                        switch (data.ScaleMode)
-                        {
-                            case EScaleMode.ScaleBased:
-                                ResizeByScaleBased(data, image);
-                                break;
-                            case EScaleMode.DirectCut:
-                                image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, 0, image.Width, image.Height), false));
-                                break;
-                            case EScaleMode.WidthBase:
-                                //基于宽度，计算新的高度
-                                int newHeight = (int)(data.Width / (image.Width / (float)image.Height));
-                                image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, (data.Height - newHeight) / 2, data.Width, newHeight), false));
-                                break;
-                            case EScaleMode.HeightBase:
-                                //基于高度，计算新的宽度
-                                int newWidth = (int)(data.Height * (image.Width / (float)image.Height));
-                                image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle((data.Width - newWidth) / 2, 0, newWidth, data.Height), false));
-                                break;
-                            case EScaleMode.ScaleBasedByCut:
-                                ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Crop);
-                                break;
-                            case EScaleMode.Pad:
-                                ResizeByMode(image, data, padMode);
-                                break;
-                            case EScaleMode.DirectScale_Min:
-                                ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Min);
-                                break;
-                            case EScaleMode.DirectScale_Max:
-                                ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Max);
-                                break;
-                            case EScaleMode.StretchScale:
-                                ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Stretch);
-                                break;
-                            case EScaleMode.POT:
-                                ResizeByMode(image, CalcPot(image.Width, data.PotMode), CalcPot(image.Height, data.PotMode), data, padMode);
-                                break;
-                            case EScaleMode.POT_Cube:
-                                //取最长边作为新的方形变长
-                                int pot = CalcPot(image.Width > image.Height ? image.Width : image.Height, data.PotMode);
-                                ResizeByMode(image, pot, pot, data, padMode);
-                                break;
-                        }
-                    using (MemoryStream ms = new MemoryStream())
+                if (data.ScaleMode != EScaleMode.NotScale)
+                    switch (data.ScaleMode)
                     {
-                        //检测是原格式还是转换格式
-                        IImageFormat? format;
-                        if (data.OutputEncoder == null)
-                        {
-                            if (Image.TryDetectFormat(bytes, out format))
-                                image.Save(ms, format);
-                            else image.Save(ms, GetDefaultEncoder());
-                        }
-                        else
-                            image.Save(ms, data.OutputEncoder.CraeteEncoder());
-                        return ms.ToArray();
+                        case EScaleMode.ScaleBased:
+                            ResizeByScaleBased(data, image);
+                            break;
+                        case EScaleMode.DirectCut:
+                            image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, 0, image.Width, image.Height), false));
+                            break;
+                        case EScaleMode.WidthBase:
+                            //基于宽度，计算新的高度
+                            int newHeight = (int)(data.Width / (image.Width / (float)image.Height));
+                            image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, (data.Height - newHeight) / 2, data.Width, newHeight), false));
+                            break;
+                        case EScaleMode.HeightBase:
+                            //基于高度，计算新的宽度
+                            int newWidth = (int)(data.Height * (image.Width / (float)image.Height));
+                            image.Mutate(x => x.Resize(data.Width, data.Height, data.ResamplerAlgorithm, new Rectangle(0, 0, image.Width, image.Height), new Rectangle((data.Width - newWidth) / 2, 0, newWidth, data.Height), false));
+                            break;
+                        case EScaleMode.ScaleBasedByCut:
+                            ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Crop);
+                            break;
+                        case EScaleMode.Pad:
+                            ResizeByMode(image, data, padMode);
+                            break;
+                        case EScaleMode.DirectScale_Min:
+                            ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Min);
+                            break;
+                        case EScaleMode.DirectScale_Max:
+                            ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Max);
+                            break;
+                        case EScaleMode.StretchScale:
+                            ResizeByMode(image, data, SixLabors.ImageSharp.Processing.ResizeMode.Stretch);
+                            break;
+                        case EScaleMode.POT:
+                            ResizeByMode(image, CalcPot(image.Width, data.PotMode), CalcPot(image.Height, data.PotMode), data, padMode);
+                            break;
+                        case EScaleMode.POT_Cube:
+                            //取最长边作为新的方形变长
+                            int pot = CalcPot(image.Width > image.Height ? image.Width : image.Height, data.PotMode);
+                            ResizeByMode(image, pot, pot, data, padMode);
+                            break;
                     }
-                    //image.Save(Path.Combine(Path.GetDirectoryName(path), "[Resize]" + Path.GetFileName(path)));
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    //检测是原格式还是转换格式
+                    if (data.OutputEncoder == null)
+                    {
+                        IImageFormat? format = Image.DetectFormat(bytes);
+                        //if (Image.TryDetectFormat(bytes, out format))
+                        if (format != null)
+                            image.Save(ms, format);
+                        else image.Save(ms, GetDefaultEncoder());
+                    }
+                    else
+                        image.Save(ms, data.OutputEncoder.CraeteEncoder());
+                    return ms.ToArray();
                 }
+                //image.Save(Path.Combine(Path.GetDirectoryName(path), "[Resize]" + Path.GetFileName(path)));
             }
-            catch (Exception ex)
-            {
-                LogManager.GetInstance.LogError(ex.Message);
-                return null;
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    LogManager.GetInstance.LogError(ex.Message);
+            //    return null;
+            //}
         }
 
-        private static CancellationTokenSource _cancellation;
-        private static TexturesModifyData _modifyDataConfig;
+        private static CancellationTokenSource? _cancellation;
+        private static TexturesModifyData? _modifyDataConfig;
+        private static BlockingCollection<string>? _pathQueue;
+        //private static string? _outputSuffix;
 
         /// <summary>
         /// 执行批量修改
         /// </summary>
         /// <param name="data"></param>
-        public static async void StartBatchModify(TexturesModifyData data)
+        public static async Task StartBatchModify(TexturesModifyData data)
         {
+            if (data.InputPath == null)
+            {
+                LogManager.GetInstance.LogError("无输入目录！");
+                return;
+            }
             _modifyDataConfig = data;
             _cancellation = new CancellationTokenSource();
-            for (int i = 0; i < data.ProcessCount; i++)
-            {
-                Task.Run(ModifyImagesFunc, _cancellation.Token);
-            }
-            await Task.Run(EnumerateImagesFunc, _cancellation.Token);
+            await Task.Run(EnumerateImagesFunc);
+            _cancellation.Dispose();
+        }
+
+        /// <summary>
+        /// 终止批量修改，如有的话
+        /// </summary>
+        public static void CancelBatch()
+        {
+            _cancellation?.Cancel();
         }
 
         /// <summary>
         /// 枚举目录线程
         /// </summary>
-        private static async void EnumerateImagesFunc()
+        private static void EnumerateImagesFunc()
         {
+            _pathQueue = new BlockingCollection<string>(_modifyDataConfig!.ProcessCount);
+            //并发线程
+            Task[] tasks = new Task[_modifyDataConfig.ProcessCount];
+            for (int i = 0; i < _modifyDataConfig.ProcessCount; i++)
+            {
+                tasks[i] = Task.Run(() => ModifyImagesFunc(i + 1));
+            }
+            //自身则负责添加路径
+            EnumerationOptions opt = new EnumerationOptions();
+            opt.RecurseSubdirectories = true;
             try
             {
-                EnumerationOptions opt = new EnumerationOptions();
-                opt.RecurseSubdirectories = true;
                 foreach (var pattern in Filter)
                 {
-                    //foreach (var item in Directory.EnumerateFiles(dirPath, pattern, opt))
-                    //{
-                    //    return item;
-                    //}
+                    foreach (var item in Directory.EnumerateFiles(_modifyDataConfig.InputPath!, pattern, opt))
+                    {
+                        _pathQueue.TryAdd(item, 0, _cancellation!.Token);
+                        if (_cancellation.Token.IsCancellationRequested)
+                        {
+                            LogManager.GetInstance.LogWarning("终止枚举线程！");
+                            return;
+                        }
+                    }
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                LogManager.GetInstance.LogError(ex.Message);
+                LogManager.GetInstance.LogWarning("枚举线程已强行终止！Error:" + ex.Message);
             }
         }
 
         /// <summary>
         /// 处理图片线程
         /// </summary>
-        private static void ModifyImagesFunc()
+        private static async void ModifyImagesFunc(int num)
         {
+            string? path;
+            while (true)
+            {
+                try
+                {
+                    if (_pathQueue!.TryTake(out path, 0, _cancellation!.Token))
+                    {
+                        byte[] bytes = File.ReadAllBytes(path);
+                        bytes = ModifyTextures(bytes, _modifyDataConfig!);
+                        string newPath = Path.Combine(_modifyDataConfig!.OutputPath!, Path.GetFileNameWithoutExtension(path) + _modifyDataConfig.OutputEncoder?.GetFileSuffix() ?? Path.GetExtension(path));
+                        File.WriteAllBytes(newPath, bytes);
+                        LogManager.GetInstance.Log($"线程 [{num}] 处理完成：to {path} from {newPath}");
+                    }
+                    if (_cancellation.Token.IsCancellationRequested)
+                    {
+                        LogManager.GetInstance.LogWarning("终止图片处理线程：" + num);
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogManager.GetInstance.LogWarning($"图片处理线程 [{num}] 已强行终止！Error:{ex.Message}");
+                }
 
+            }
         }
 
 
