@@ -36,18 +36,29 @@ namespace BatchTextureModifier
             _helper = new ViewHelper();
             DataContext = _helper;
 
-            LogViewer.SizeChanged += OnViewerChange;
+            LogViewer.ScrollChanged += OnViewerChange;
         }
 
-        private void OnViewerChange(object sender, SizeChangedEventArgs e)
+        private void OnViewerChange(object sender, ScrollChangedEventArgs e)
         {
+            if (e.ExtentHeightChange <= 0) return;
             LogViewer.ScrollToEnd();
         }
 
-        CancellationTokenSource? _cancel;
-        private async void DoProcessBtn_Click(object sender, RoutedEventArgs e)
+        protected override void OnClosed(EventArgs e)
         {
+            base.OnClosed(e);
+            _imageCompareView?.Close();
+        }
+
+        private void DoProcessBtn_Click(object sender, RoutedEventArgs e)
+        {
+            OutPutTabControl.SelectedIndex = 1;
             _helper.StartBatchModify();
+            if (_helper.CanBatchProcess) return;
+            BatchProgressView view = new BatchProgressView();
+            view.DataContext = _helper;
+            view.ShowDialog();
         }
 
         /// <summary>

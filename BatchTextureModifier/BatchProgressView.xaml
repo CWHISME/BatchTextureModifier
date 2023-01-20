@@ -1,0 +1,25 @@
+﻿<Window x:Class="BatchTextureModifier.BatchProgressView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BatchTextureModifier"
+        mc:Ignorable="d"
+        Title="处理中..." Height="300" Width="800" ResizeMode="NoResize">
+    <Grid>
+        <DockPanel  Height="30" Margin="30" VerticalAlignment="Top">
+            <Button Name="CancelBatch" DockPanel.Dock="Right" Content="取消" Margin="30,0,0,0" Width="100" Click="CancelBatch_Click"></Button>
+            <ProgressBar  Minimum="0" Maximum="100" IsIndeterminate="True"  />
+        </DockPanel>
+        <!--<TextBlock  Height="30" Name="NewestLogBtn" Text="{Binding LastLogItem.Content}" Foreground="{Binding LastLogItem.ForgroundColor}" Margin="50,0,50,-30"/>-->
+        <ScrollViewer Name="LogViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="30,70,30,30">
+            <ListBox IsEnabled="False" ItemsSource="{Binding OutputLogs}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Content}" Foreground="{Binding ForgroundColor}"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </ScrollViewer>
+    </Grid>
+</Window>

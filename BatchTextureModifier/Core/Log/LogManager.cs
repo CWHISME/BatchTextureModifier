@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Windows.Threading;
 using static BatchTextureModifier.LogItem;
 
 namespace BatchTextureModifier
@@ -15,7 +16,7 @@ namespace BatchTextureModifier
     public class LogManager
     {
 
-        private static LogManager _instance;
+        private static LogManager? _instance;
         private static readonly object _locker = new object();
         private static SpinLock _spinLocker = new SpinLock();
         public static LogManager GetInstance
@@ -38,7 +39,7 @@ namespace BatchTextureModifier
         /// <summary>
         /// 日志改变事件，bool 表示是否是错误信息，可以进行后续处理如是否弹窗提示
         /// </summary>
-        public event Action<LogItem> OnLogChange;
+        public event Action<LogItem>? OnLogChange;
         public void Log(string str)
         {
             AddLog(ELogType.Log, str);

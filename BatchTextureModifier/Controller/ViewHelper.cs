@@ -12,8 +12,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace BatchTextureModifier
 {
@@ -69,6 +71,10 @@ namespace BatchTextureModifier
         public string[] WebpEncodingMethods { get { return WebpSetting.Method.EnumToNames(); } }
         public int WebpEncodingMethodsIndex { get { return WebpSetting.Method.EnumToIndex(); } set { WebpSetting.Method = value.IndexToEnum<WebpEncodingMethod>(); PreviewOutputImage(); } }
         public bool WebpIsLossless { get { return WebpSetting.IsLossless; } set { WebpSetting.IsLossless = value; Notify("IsSupportQuality"); PreviewOutputImage(); } }
+        //public int WebpSettingEntropyPasses { get { return WebpSetting.EntropyPasses; } set { WebpSetting.EntropyPasses = value; PreviewOutputImage(); } }
+        //public int WebpSettingSpatialNoiseShaping { get { return WebpSetting.SpatialNoiseShaping; } set { WebpSetting.SpatialNoiseShaping = value; PreviewOutputImage(); } }
+        //public int WebpSettingFilterStrength { get { return WebpSetting.FilterStrength; } set { WebpSetting.FilterStrength = value; PreviewOutputImage(); } }
+
 
         //JPEG格式转换方法==========
         public bool IsJpegEncoder { get { return _convertData.OutputEncoder is JpegEncoderSetting; } }
@@ -156,8 +162,11 @@ namespace BatchTextureModifier
         public LogViewItem LastLogItem { get { return _outputLogs[_outputLogs.Count - 1]; } }
         #endregion
 
+        private SynchronizationContext? _synchronizationContext;
+
         public ViewHelper()
         {
+            _synchronizationContext = DispatcherSynchronizationContext.Current;
             //注释日志
             LogManager.GetInstance.OnLogChange += OnLogChange;
             LogManager.GetInstance.LogWarning("核心初始化...");
@@ -182,10 +191,18 @@ namespace BatchTextureModifier
 
         private void OnLogChange(LogItem log)
         {
-            _outputLogs.Add(new LogViewItem(log));
-            if (log.LogType == LogItem.ELogType.Error)
-                ShowErrorMessage(log.LogString);
-            Notify("OutputLogs", "LastLogItem");
+            if (_synchronizationContext == null)
+            {
+                ShowErrorMessage("线程回调出现问题：SynchronizationContext 为空！");
+                return;
+            }
+            _synchronizationContext.Post((x) =>
+            {
+                _outputLogs.Add(new LogViewItem(log));
+                if (log.LogType == LogItem.ELogType.Error)
+                    ShowErrorMessage(log.LogString);
+                Notify("OutputLogs", "LastLogItem");
+            }, null);
         }
 
         #region 绑定通知
@@ -281,10 +298,10 @@ namespace BatchTextureModifier
         /// </summary>
         public async void StartBatchModify()
         {
-            _isNoneBatchProcess = true;
+            _isNoneBatchProcess = false;
             Notify("CanBatchProcess");
             await TexturesModifyUtility.StartBatchModify(ConvertData);
-            _isNoneBatchProcess = false;
+            _isNoneBatchProcess = true;
             Notify("CanBatchProcess");
         }
 
@@ -403,7 +420,8 @@ namespace BatchTextureModifier
 
         private float CalcSize(long length)
         {
-            return (float)(Math.Round(length / 1024f / 1024, 2));
+            float m = 1024 * 1024;
+            return (float)(Math.Round(length / m, length < m ? 3 : 2));
         }
 
         private BitmapImage? LoadImage(byte[]? texBytes)

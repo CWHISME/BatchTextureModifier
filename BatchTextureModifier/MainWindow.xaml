@@ -81,29 +81,29 @@
                                             </StackPanel>
                                             <CheckBox Content="交错编码" Margin="5,0,0,0" IsChecked="{Binding JpgIsInterleaved}" Visibility="{c:Binding 'IsJpegEncoder',FalseToVisibility=Collapsed}"/>
                                             <StackPanel Orientation="Vertical" Visibility="{c:Binding IsWebp,FalseToVisibility=Collapsed}" Margin="5,0,0,0">
-                                                <DockPanel>
-                                                    <DockPanel >
-                                                        <TextBlock Text="编码方式：" ToolTip="{Binding LangData.WebpEncodingMethodTips}"/>
-                                                        <ComboBox ItemsSource="{Binding WebpEncodingMethods}" SelectedIndex="{Binding WebpEncodingMethodsIndex}" Width="80" ToolTip="{Binding LangData.WebpEncodingMethodTips}" HorizontalAlignment="Right"/>
-                                                    </DockPanel>
-                                                    <DockPanel HorizontalAlignment="Right">
-                                                        <TextBlock Text="熵编码:" Margin="-50,0,0,0"/>
-                                                        <Slider x:Name="WebpSettingEntropyPasses" Minimum="1" Maximum="10"  Value="{Binding WebpSetting.EntropyPasses}" Width="100"/>
-                                                        <TextBlock Text="{Binding ElementName=WebpSettingEntropyPasses,Path=Value,StringFormat='({0})'}" Foreground="Plum" Width="30" TextAlignment="Center"/>
-                                                    </DockPanel>
+                                                <!--<DockPanel>-->
+                                                <DockPanel >
+                                                    <TextBlock Text="编码方式：" ToolTip="{Binding LangData.WebpEncodingMethodTips}"/>
+                                                    <ComboBox ItemsSource="{Binding WebpEncodingMethods}" SelectedIndex="{Binding WebpEncodingMethodsIndex}" Width="80" ToolTip="{Binding LangData.WebpEncodingMethodTips}" HorizontalAlignment="Right"/>
                                                 </DockPanel>
                                                 <DockPanel >
-                                                    <DockPanel Margin="0,5,0,0">
-                                                        <TextBlock Text="空间噪声:" />
-                                                        <Slider Minimum="0" Maximum="100" Value="{Binding WebpSetting.SpatialNoiseShaping}" x:Name="WebpSettingSpatialNoiseShaping" Width="100"/>
-                                                        <TextBlock Text="{Binding ElementName=WebpSettingSpatialNoiseShaping,Path=Value,StringFormat='({0})'}" Foreground="SandyBrown" Width="30" TextAlignment="Center"/>
-                                                    </DockPanel>
-                                                    <DockPanel  Margin="5,5,0,0" HorizontalAlignment="Right">
-                                                        <TextBlock Text="过滤强度:" />
-                                                        <Slider Minimum="0" Maximum="100" Value="{Binding WebpSetting.FilterStrength}" x:Name="WebpSettingFilterStrength" Width="100"/>
-                                                        <TextBlock Text="{Binding ElementName=WebpSettingFilterStrength,Path=Value,StringFormat='({0})'}" Foreground="SkyBlue" Width="30" TextAlignment="Center"/>
-                                                    </DockPanel>
+                                                    <TextBlock Text="熵编码:" ToolTip="{Binding LangData.WebpSettingSliderTips}"/>
+                                                    <Slider x:Name="WebpSettingEntropyPasses" Minimum="1" Maximum="10"  Value="{Binding WebpSetting.EntropyPasses}" Width="100" Margin="12,0,0,0"/>
+                                                    <TextBlock Text="{Binding ElementName=WebpSettingEntropyPasses,Path=Value,StringFormat='({0})'}" Foreground="Plum" Width="30" TextAlignment="Center"/>
                                                 </DockPanel>
+                                                <!--</DockPanel>-->
+                                                <!--<DockPanel >-->
+                                                <DockPanel  Margin="0,2,0,0">
+                                                    <TextBlock Text="空间噪声:" ToolTip="{Binding LangData.WebpSettingSliderTips}"/>
+                                                    <Slider Minimum="0" Maximum="100" Value="{Binding WebpSetting.SpatialNoiseShaping}" x:Name="WebpSettingSpatialNoiseShaping" Width="100"/>
+                                                    <TextBlock Text="{Binding ElementName=WebpSettingSpatialNoiseShaping,Path=Value,StringFormat='({0})'}" Foreground="SandyBrown" Width="30" TextAlignment="Center"/>
+                                                </DockPanel>
+                                                <DockPanel  Margin="0,2,0,0">
+                                                    <TextBlock Text="过滤强度:" ToolTip="{Binding LangData.WebpSettingSliderTips}"/>
+                                                    <Slider Minimum="0" Maximum="100" Value="{Binding WebpSetting.FilterStrength}" x:Name="WebpSettingFilterStrength" Width="100"/>
+                                                    <TextBlock Text="{Binding ElementName=WebpSettingFilterStrength,Path=Value,StringFormat='({0})'}" Foreground="SkyBlue" Width="30" TextAlignment="Center"/>
+                                                </DockPanel>
+                                                <!--</DockPanel>-->
                                             </StackPanel>
                                             <StackPanel Orientation="Vertical" Visibility="{c:Binding IsPng,FalseToVisibility=Collapsed}" Margin="5,0,0,0">
                                                 <DockPanel>
@@ -174,6 +174,7 @@
                                     <StackPanel Orientation="Vertical">
                                         <CheckBox Content="直接覆盖" Margin="6" IsChecked="{Binding IsDirectOverideFile}" ToolTip="{Binding LangData.LangOverideTips}" VerticalAlignment="Center" VerticalContentAlignment="Center" />
                                         <CheckBox Content="备份文件" Margin="6" Visibility="{c:Binding IsDirectOverideFile,FalseToVisibility=Collapsed}" IsChecked="{Binding IsBackupInputFile}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
+                                        <CheckBox Content="保留结构" Margin="6" ToolTip="{Binding LangData.IsBackupWithStructureTips}" Visibility="{c:Binding IsDirectOverideFile,FalseToVisibility=Collapsed}" IsChecked="{Binding ConvertData.IsBackupWithStructure}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
                                     </StackPanel>
                                 </GroupBox>
                             </StackPanel>

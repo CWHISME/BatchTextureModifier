@@ -175,10 +175,26 @@ namespace BatchTextureModifier
             //}
         }
 
+        //取消token
         private static CancellationTokenSource? _cancellation;
+        //当前修改的设置数据
         private static TexturesModifyData? _modifyDataConfig;
+        //枚举图片路径
         private static BlockingCollection<string>? _pathQueue;
+        //备份目录
+        private static string? _backupDirectory;
         //private static string? _outputSuffix;
+
+        public static bool RegisterCancelCallback(Action action)
+        {
+            if (_cancellation == null)
+            {
+                LogManager.GetInstance.LogError("Cancellation 为空，注册出现错误：处理程序未初始化！");
+                return false;
+            }
+            _cancellation.Token.Register(action);
+            return true;
+        }
 
         /// <summary>
         /// 执行批量修改
@@ -186,15 +202,40 @@ namespace BatchTextureModifier
         /// <param name="data"></param>
         public static async Task StartBatchModify(TexturesModifyData data)
         {
+            if (_cancellation != null && !_cancellation.IsCancellationRequested)
+            {
+                LogManager.GetInstance.LogError("当前似乎正在执行中？");
+                return;
+            }
             if (data.InputPath == null)
             {
                 LogManager.GetInstance.LogError("无输入目录！");
                 return;
             }
+            if (data.OutputPath == null && !data.IsDirectOverideFile)
+            {
+                data.OutputPath = data.InputPath + "_Output";
+                Directory.CreateDirectory(data.OutputPath);
+                LogManager.GetInstance.LogWarning("无输出目录！将自动设置为：" + data.OutputPath);
+            }
+            if (!Directory.Exists(data.OutputPath))
+                Directory.CreateDirectory(data.OutputPath!);
+            //是否备份，覆盖源文件的情况才需要备份
+            if (data.IsDirectOverideFile && data.IsBackupInputFile)
+            {
+                do
+                {
+                    _backupDirectory = $" {data.InputPath}_{DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss")}_Backup";
+                } while (Directory.Exists(_backupDirectory));
+                Directory.CreateDirectory(_backupDirectory);
+                LogManager.GetInstance.LogWarning("备份目录自动设置为：" + _backupDirectory);
+            }
+            else _backupDirectory = null;
             _modifyDataConfig = data;
             _cancellation = new CancellationTokenSource();
             await Task.Run(EnumerateImagesFunc);
-            _cancellation.Dispose();
+            _cancellation.Cancel();
+            //_cancellation.Dispose();
         }
 
         /// <summary>
@@ -215,7 +256,8 @@ namespace BatchTextureModifier
             Task[] tasks = new Task[_modifyDataConfig.ProcessCount];
             for (int i = 0; i < _modifyDataConfig.ProcessCount; i++)
             {
-                tasks[i] = Task.Run(() => ModifyImagesFunc(i + 1));
+                int index = i + 1;
+                tasks[i] = Task.Run(() => ModifyImagesFunc(index));
             }
             //自身则负责添加路径
             EnumerationOptions opt = new EnumerationOptions();
@@ -226,7 +268,7 @@ namespace BatchTextureModifier
                 {
                     foreach (var item in Directory.EnumerateFiles(_modifyDataConfig.InputPath!, pattern, opt))
                     {
-                        _pathQueue.TryAdd(item, 0, _cancellation!.Token);
+                        _pathQueue.TryAdd(item, -1, _cancellation!.Token);
                         if (_cancellation.Token.IsCancellationRequested)
                         {
                             LogManager.GetInstance.LogWarning("终止枚举线程！");
@@ -234,6 +276,9 @@ namespace BatchTextureModifier
                         }
                     }
                 }
+                //目录递归结束，该线程也尝试处理一下图片
+                while (_pathQueue.Count > 0 && TryModifyImages()) { }
+                LogManager.GetInstance.LogWarning("枚举线程处理完毕！");
             }
             catch (Exception ex)
             {
@@ -244,32 +289,47 @@ namespace BatchTextureModifier
         /// <summary>
         /// 处理图片线程
         /// </summary>
-        private static async void ModifyImagesFunc(int num)
+        private static void ModifyImagesFunc(int num)
         {
-            string? path;
-            while (true)
-            {
-                try
-                {
-                    if (_pathQueue!.TryTake(out path, 0, _cancellation!.Token))
-                    {
-                        byte[] bytes = File.ReadAllBytes(path);
-                        bytes = ModifyTextures(bytes, _modifyDataConfig!);
-                        string newPath = Path.Combine(_modifyDataConfig!.OutputPath!, Path.GetFileNameWithoutExtension(path) + _modifyDataConfig.OutputEncoder?.GetFileSuffix() ?? Path.GetExtension(path));
-                        File.WriteAllBytes(newPath, bytes);
-                        LogManager.GetInstance.Log($"线程 [{num}] 处理完成：to {path} from {newPath}");
-                    }
-                    if (_cancellation.Token.IsCancellationRequested)
-                    {
-                        LogManager.GetInstance.LogWarning("终止图片处理线程：" + num);
-                        return;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogManager.GetInstance.LogWarning($"图片处理线程 [{num}] 已强行终止！Error:{ex.Message}");
-                }
+            while (TryModifyImages(num)) { }
+        }
 
+        private static bool TryModifyImages(int markId = -1)
+        {
+            Thread.Sleep(100);
+            try
+            {
+                string? path;
+                if (_pathQueue!.TryTake(out path, 1, _cancellation!.Token))
+                {
+                    byte[] bytes = File.ReadAllBytes(path);
+                    //是否备份
+                    if (!string.IsNullOrEmpty(_backupDirectory))
+                    {
+                        //执行备份
+                        string backupPath = _modifyDataConfig!.IsBackupWithStructure ? Path.Combine(_backupDirectory, path.Replace(_modifyDataConfig!.InputPath!, "")) : Path.Combine(_backupDirectory, Path.GetFileName(path));
+                        if (!Directory.Exists(Path.GetDirectoryName(backupPath)))
+                            Directory.CreateDirectory(Path.GetDirectoryName(backupPath)!);
+                        File.WriteAllBytes(backupPath, bytes);
+                    }
+                    //执行修改
+                    bytes = ModifyTextures(bytes, _modifyDataConfig!);
+                    //是否覆盖源文件
+                    string newPath = _modifyDataConfig!.IsDirectOverideFile ? path : Path.Combine(_modifyDataConfig!.OutputPath!, Path.GetFileNameWithoutExtension(path) + _modifyDataConfig.OutputEncoder?.GetFileSuffix() ?? Path.GetExtension(path));
+                    File.WriteAllBytes(newPath, bytes);
+                    LogManager.GetInstance.Log($"线程 [{markId}] 处理完成：to {path} from {newPath}");
+                }
+                if (_cancellation.Token.IsCancellationRequested)
+                {
+                    LogManager.GetInstance.LogWarning("终止图片处理线程：" + markId);
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogManager.GetInstance.LogWarning($"图片处理线程 [{markId}] 已强行终止！Error:{ex.Message}");
+                return false;
             }
         }
 

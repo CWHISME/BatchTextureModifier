@@ -28,8 +28,10 @@ namespace BatchTextureModifier
         public string LangStayAlphaTips { get { return "如果是透明图片，保持透明通道精确像素值不变，否则清理不可见像素以获得更好的压缩效果"; } }
         public string CompressionTips { get { return "压缩等级越高，最终文件大小越小(但是会更慢)"; } }
         public string WebpEncodingMethodTips { get { return "编码等级越高，质量越好(但是会更慢)"; } }
+        public string WebpSettingSliderTips { get { return "修改后若想预览新的效果，需要手动刷新（例如改一下其它参数，因为滑动条改变就自动刷新太卡了）"; } }
         public string QualityTips { get { return "质量等级，范围 0~100，越高质量越好，但是文件也会更大"; } }
         public string PngFilterAlgorithmTips { get { return "会影响文件大小"; } }
+        public string IsBackupWithStructureTips { get { return "备份源文件时，保持原有的目录结构，否则备份的图片会全部放在一个文件夹中"; } }
 
     }
 }

@@ -45,6 +45,7 @@ namespace BatchTextureModifier
         /// </summary>
         public bool IsBackupInputFile = true;
 
+
         /// <summary>
         /// 输出格式
         /// </summary>
@@ -70,6 +71,10 @@ namespace BatchTextureModifier
         /// </summary>
         public bool StayPixel = true;
 
+        /// <summary>
+        /// 备份源文件时，保持原有的目录结构，否则全部放在一个文件夹中
+        /// </summary>
+        public bool IsBackupWithStructure { get; set; } = false;
         /// <summary>
         /// 如果是透明图片，保持透明通道不变，否则将透明度填充掉
         /// </summary>
