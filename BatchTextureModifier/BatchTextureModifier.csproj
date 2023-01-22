@@ -11,8 +11,10 @@
     <RepositoryUrl>https://github.com/CWHISME/BatchTextureModifier.git</RepositoryUrl>
     <SignAssembly>False</SignAssembly>
     <PackageProjectUrl></PackageProjectUrl>
-    <FileVersion>1.2</FileVersion>
-    <AssemblyVersion>1.1</AssemblyVersion>
+    <FileVersion></FileVersion>
+    <AssemblyVersion></AssemblyVersion>
+	<GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+	<GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
   </PropertyGroup>
 
   <ItemGroup>

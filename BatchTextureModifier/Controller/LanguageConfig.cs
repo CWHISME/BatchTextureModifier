@@ -5,6 +5,7 @@
 //用途：https://github.com/CWHISME/BatchTextureModifier.git
 //=========================================
 
+using System.Reflection;
 using System.Windows.Media;
 
 namespace BatchTextureModifier
@@ -18,7 +19,7 @@ namespace BatchTextureModifier
         //ToopTips 显示延迟时间
         public float TooTipsTime { get { return 0; } }
 
-        public string TitleName { get { return "批量图片处理器 1.0"; } }
+        public string TitleName { get { return "批量图片处理器 " + Assembly.GetExecutingAssembly().GetName().Version; } }
         public string StayInputFormatTips { get { return "在处理完毕后，保存的图片与输入格式保持一致。例如修改前是 *.png，修改后也是 *.png"; } }
         public string OutputFormatComboBoxTips { get { return "选择输出的新图片格式，注意：TGA 不支持预览！"; } }
         public string LangResamplerAlgorithmTips { get { return "缩放算法将会影响图片的缩放质量，默认的 Bicubic 就不错"; } }

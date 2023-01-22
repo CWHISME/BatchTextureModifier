@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -312,7 +313,13 @@ namespace BatchTextureModifier
 
         public void DisplayAboutInfo()
         {
-            if (MessageBox.Show("批量图片处理工具 \n\nMade by wangjiaying\n个人博客：wangjiaying.top\n\n=>点击确认前往<=", "关于", MessageBoxButton.OKCancel, MessageBoxImage.Information) == MessageBoxResult.OK)
+            DateTime lastPublishTIme = DateTime.MinValue;
+            try
+            {
+                lastPublishTIme = File.GetLastWriteTime(System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName!);
+            }
+            catch (Exception) { }
+            if (MessageBox.Show($"批量图片处理工具 {Assembly.GetExecutingAssembly().GetName().Version}\n编译时间：{lastPublishTIme}\n\nMade by wangjiaying\n个人博客：wangjiaying.top\n\n=>点击确认前往<=", "关于", MessageBoxButton.OKCancel, MessageBoxImage.Information) == MessageBoxResult.OK)
             {
                 System.Diagnostics.Process.Start("explorer.exe", "https://wangjiaying.top");
             }

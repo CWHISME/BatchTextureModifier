@@ -355,7 +355,7 @@ namespace BatchTextureModifier
                         {
                             //执行备份
                             string backupPath = _modifyDataConfig!.IsBackupWithStructure ? Path.Combine(_backupDirectory, path.Replace(_modifyDataConfig!.InputPath!, "")) : Path.Combine(_backupDirectory, Path.GetFileName(path));
-                            if (TryCreateDirectory(Path.GetDirectoryName(backupPath)))
+                            if (TryCreateDirectory(Path.GetDirectoryName(backupPath)!))
                                 File.WriteAllBytes(backupPath, bytes);
                         }
                         //删除源文件
