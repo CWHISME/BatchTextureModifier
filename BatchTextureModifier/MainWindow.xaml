@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:BatchTextureModifier"
         xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
         mc:Ignorable="d"
-        Title="批量图片处理器(BatchTextureModifier)"  MinWidth="800" MinHeight="700" ResizeMode="CanMinimize" MaxWidth="{Binding RelativeSource={RelativeSource Mode=Self},Path=MinWidth}" MaxHeight="{Binding RelativeSource={RelativeSource Mode=Self},Path=MinHeight}" >
+        Title="{Binding LangData.TitleName}"  MinWidth="800" MinHeight="700" ResizeMode="CanMinimize" MaxWidth="{Binding RelativeSource={RelativeSource Mode=Self},Path=MinWidth}" MaxHeight="{Binding RelativeSource={RelativeSource Mode=Self},Path=MinHeight}" >
     <Window.Resources>
         <local:MultiContentConverter x:Key="MultiContentConverter" />
         <Style TargetType="ComboBox">
@@ -174,7 +174,7 @@
                                     <StackPanel Orientation="Vertical">
                                         <CheckBox Content="直接覆盖" Margin="6" IsChecked="{Binding IsDirectOverideFile}" ToolTip="{Binding LangData.LangOverideTips}" VerticalAlignment="Center" VerticalContentAlignment="Center" />
                                         <CheckBox Content="备份文件" Margin="6" Visibility="{c:Binding IsDirectOverideFile,FalseToVisibility=Collapsed}" IsChecked="{Binding IsBackupInputFile}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
-                                        <CheckBox Content="保留结构" Margin="6" ToolTip="{Binding LangData.IsBackupWithStructureTips}" Visibility="{c:Binding IsDirectOverideFile,FalseToVisibility=Collapsed}" IsChecked="{Binding ConvertData.IsBackupWithStructure}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
+                                        <CheckBox Content="保留结构" Margin="6" ToolTip="{Binding LangData.IsBackupWithStructureTips}" IsChecked="{Binding ConvertData.IsBackupWithStructure}" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
                                     </StackPanel>
                                 </GroupBox>
                             </StackPanel>
@@ -184,7 +184,7 @@
             </GroupBox>
             <DockPanel DockPanel.Dock="Bottom"  >
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="5,0,0,0">
-                    <TextBlock  Height="15" Name="NewestLogBtn" Text="{Binding LastLogItem.Content}" Foreground="{Binding LastLogItem.ForgroundColor}" ToolTip="这是最新一条日志，查看更多详情请点击进入输出页面" TextDecorations="Underline" MouseDown="NewestLogBtn_Click"  HorizontalAlignment="Left" />
+                    <TextBlock  Height="15" Width="600" Name="NewestLogBtn" Text="{Binding LastLogItem.Content}" Foreground="{Binding LastLogItem.ForgroundColor}" ToolTip="这是最新一条日志，查看更多详情请点击进入输出页面" TextDecorations="Underline" MouseDown="NewestLogBtn_Click"  HorizontalAlignment="Left" />
                 </StackPanel>
                 <StackPanel  Orientation="Horizontal" HorizontalAlignment="Right">
                     <TextBlock  Name="AboutBtn" Text="Made by wangjiaying" ToolTip="点我 (‾◡◝)" TextDecorations="Underline" MouseDown="AboutBtn_Click"/>

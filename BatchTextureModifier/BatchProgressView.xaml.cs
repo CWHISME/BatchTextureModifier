@@ -28,8 +28,8 @@ namespace BatchTextureModifier
         protected override void OnInitialized(EventArgs e)
         {
             base.OnInitialized(e);
-            if (!TexturesModifyUtility.RegisterCancelCallback(ForceClose))
-                ForceClose();
+            //if (!TexturesModifyUtility.RegisterCancelCallback(ForceClose))
+            //    ForceClose();
             LogViewer.ScrollChanged += OnViewerChange;
         }
 
@@ -40,7 +40,7 @@ namespace BatchTextureModifier
         }
 
         private bool _autoClose = false;
-        private void ForceClose()
+        public void ForceClose()
         {
             _autoClose = true;
             Close();
@@ -48,7 +48,7 @@ namespace BatchTextureModifier
 
         private void CancelBatch_Click(object sender, RoutedEventArgs e)
         {
-            if (CheckCancel()) Close();
+            if (CheckCancel()) ForceClose();
         }
 
         protected override void OnClosing(CancelEventArgs e)

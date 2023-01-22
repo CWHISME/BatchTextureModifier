@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BatchTextureModifier"
         mc:Ignorable="d"
-        Title="处理中..." Height="300" Width="800" ResizeMode="NoResize">
+        Title="处理中..." Height="300" Width="850" ResizeMode="NoResize">
     <Grid>
         <DockPanel  Height="30" Margin="30" VerticalAlignment="Top">
             <Button Name="CancelBatch" DockPanel.Dock="Right" Content="取消" Margin="30,0,0,0" Width="100" Click="CancelBatch_Click"></Button>

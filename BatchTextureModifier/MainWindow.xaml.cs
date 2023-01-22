@@ -54,11 +54,32 @@ namespace BatchTextureModifier
         private void DoProcessBtn_Click(object sender, RoutedEventArgs e)
         {
             OutPutTabControl.SelectedIndex = 1;
-            _helper.StartBatchModify();
-            if (_helper.CanBatchProcess) return;
             BatchProgressView view = new BatchProgressView();
+            view.Owner = this;
+            view.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             view.DataContext = _helper;
-            view.ShowDialog();
+            _helper.StartBatchModify(() =>
+            {
+                try
+                {
+                    view.ForceClose();
+                }
+                catch (Exception ex)
+                {
+                    LogManager.GetInstance.LogError(ex.Message);
+                }
+            });
+            if (_helper.CanBatchProcess) return;
+            try
+            {
+                view.ShowDialog();
+                this.Activate();
+            }
+            catch (Exception ex)
+            {
+                LogManager.GetInstance.LogError(ex.Message);
+            }
+            //SyncTextures();
         }
 
         /// <summary>
@@ -173,6 +194,28 @@ namespace BatchTextureModifier
         {
             //保存文件
             _helper.SaveSinglePreviewImage();
+        }
+
+        private void SyncTextures()
+        {
+            //根据名字同步两个目录的图片
+            //原始目录
+            string pathOrigin = @"E:\项目\Blog\HexoBlog\Hexo\source\images\coverimages\large";
+            //会被修改的目录
+            string pathModify = @"E:\项目\Blog\BlogTexturesBackup\large_";
+            //pathModify 中多余的图片会被删除
+
+            string[] orgs = Directory.GetFiles(pathOrigin);
+            string[] mods = Directory.GetFiles(pathModify);
+            foreach (var item in mods)
+            {
+                string name = System.IO.Path.GetFileNameWithoutExtension(item);
+                if (Array.FindIndex(orgs, x => name == System.IO.Path.GetFileNameWithoutExtension(x)) == -1)
+                {
+                    File.Delete(item);
+                    LogManager.GetInstance.Log("删除：" + item);
+                }
+            }
         }
     }
 }

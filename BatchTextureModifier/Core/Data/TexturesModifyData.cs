@@ -17,6 +17,10 @@ namespace BatchTextureModifier
         /// 批量处理时的核心数目
         /// </summary>
         public int ProcessCount;
+        /// <summary>
+        /// 执行时等待时长，若指定时间内都没有任何一个线程处理完成，则直接停止
+        /// </summary>
+        public int ProcessWaitMillisecond = 10000;
 
         /// <summary>
         /// 修改后的宽度

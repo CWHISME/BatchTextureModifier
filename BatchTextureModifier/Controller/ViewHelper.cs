@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -177,7 +178,7 @@ namespace BatchTextureModifier
             builder.Append("  ");
             builder.AppendLine(Environment.Version.ToString());
             builder.Append("初始化内存占用：");
-            builder.Append(CalcSize(Environment.WorkingSet).ToString());
+            builder.Append(TexturesModifyUtility.CalcSize(Environment.WorkingSet).ToString());
             builder.AppendLine("MB");
             builder.Append("核心数：");
             builder.Append(Environment.ProcessorCount.ToString());
@@ -296,13 +297,17 @@ namespace BatchTextureModifier
         /// <summary>
         /// 开始执行批量处理
         /// </summary>
-        public async void StartBatchModify()
+        public async void StartBatchModify(Action onEnd)
         {
             _isNoneBatchProcess = false;
             Notify("CanBatchProcess");
-            await TexturesModifyUtility.StartBatchModify(ConvertData);
+            await Task.Run(async () =>
+            {
+                await TexturesModifyUtility.StartBatchModify(ConvertData);
+            });
             _isNoneBatchProcess = true;
             Notify("CanBatchProcess");
+            onEnd?.Invoke();
         }
 
         public void DisplayAboutInfo()
@@ -361,7 +366,7 @@ namespace BatchTextureModifier
                 try
                 {
                     _previewImageBytes = File.ReadAllBytes(imagePath);
-                    InputImageSize = CalcSize(_previewImageBytes);
+                    InputImageSize = TexturesModifyUtility.CalcSize(_previewImageBytes);
                 }
                 catch (Exception ex)
                 {
@@ -403,25 +408,13 @@ namespace BatchTextureModifier
             try
             {
                 bytes = TexturesModifyUtility.ModifyTextures(_previewImageBytes, _convertData);
-                OutputImageSize = CalcSize(bytes);
+                OutputImageSize = TexturesModifyUtility.CalcSize(bytes);
             }
             catch (Exception ex)
             {
                 LogManager.GetInstance.LogError(ex.Message);
             }
             PreviewOutputBitmap = LoadImage(bytes);
-        }
-
-        private float CalcSize(byte[] bytes)
-        {
-            if (bytes == null) return 0;
-            return CalcSize(bytes.Length);
-        }
-
-        private float CalcSize(long length)
-        {
-            float m = 1024 * 1024;
-            return (float)(Math.Round(length / m, length < m ? 3 : 2));
         }
 
         private BitmapImage? LoadImage(byte[]? texBytes)

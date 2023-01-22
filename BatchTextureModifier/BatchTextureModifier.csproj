@@ -9,6 +9,10 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Copyright>Made by wangjiaying</Copyright>
     <RepositoryUrl>https://github.com/CWHISME/BatchTextureModifier.git</RepositoryUrl>
+    <SignAssembly>False</SignAssembly>
+    <PackageProjectUrl></PackageProjectUrl>
+    <FileVersion>1.2</FileVersion>
+    <AssemblyVersion>1.1</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
