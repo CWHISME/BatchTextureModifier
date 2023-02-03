@@ -17,12 +17,16 @@
                     <Border BorderThickness="1" BorderBrush="Red" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Image Name="PreviewOriginImage" Source="{Binding PreviewInputBitmap}" Stretch="Uniform" />
                     </Border>
-                    <Label Visibility="{Binding PreviewImageVisibility}" Foreground="MediumPurple">
+                    <Label Visibility="{c:Binding 'PreviewInputBitmap!=null',FalseToVisibility=Hidden}" Foreground="MediumPurple">
                         <MultiBinding  Converter="{StaticResource MultiContentConverter}" ConverterParameter="分辨率：{0}x{1}">
                             <Binding ElementName="PreviewOriginImage" Path="Source.PixelWidth"/>
                             <Binding ElementName="PreviewOriginImage" Path="Source.PixelHeight"/>
                         </MultiBinding>
                     </Label>
+                    <StackPanel Orientation="Vertical" Height="30" Margin="30" Visibility="{c:Binding IsLoadingInputImage,FalseToVisibility=Collapsed}">
+                        <TextBlock Text="加载中..." TextAlignment="Center"/>
+                        <ProgressBar  Minimum="0" Maximum="100" IsIndeterminate="True" Height="10" />
+                    </StackPanel>
                     <!--<Label Content="aaaaaaaaaaaa"></Label>-->
                 </Grid>
             </GroupBox>
@@ -33,12 +37,16 @@
                     <Border BorderThickness="1" BorderBrush="Red" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Image Name="PreviewOutputImage" Source="{Binding PreviewOutputBitmap}" Stretch="Uniform" />
                     </Border>
-                    <Label Visibility="{Binding PreviewImageVisibility}" Foreground="MediumPurple">
+                    <Label Visibility="{c:Binding 'PreviewOutputBitmap!=null',FalseToVisibility=Hidden}" Foreground="MediumPurple">
                         <MultiBinding  Converter="{StaticResource MultiContentConverter}" ConverterParameter="分辨率：{0}x{1}">
                             <Binding ElementName="PreviewOutputImage" Path="Source.PixelWidth"/>
                             <Binding ElementName="PreviewOutputImage" Path="Source.PixelHeight"/>
                         </MultiBinding>
                     </Label>
+                    <StackPanel Orientation="Vertical" Height="30" Margin="30" Visibility="{c:Binding IsLoadingOutputImage,FalseToVisibility=Collapsed}">
+                        <TextBlock Text="加载中..." TextAlignment="Center"/>
+                        <ProgressBar  Minimum="0" Maximum="100" IsIndeterminate="True" Height="10" />
+                    </StackPanel>
                     <CheckBox Name="JustDisplayResultCheck" Content="仅显示结果" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,0,0" VerticalContentAlignment="Center"/>
                     <!--</Border>-->
                     <!--</Viewbox>-->

@@ -45,6 +45,8 @@ namespace BatchTextureModifier
         public string? OutputPath { get { return _convertData.OutputPath; } set { _convertData.OutputPath = value; IsDirectOverideFile = OutputPath == InputPath; Notify("OutputPath", "HasExistOutputPath"); } }
         public bool IsDirectOverideFile { get { return _convertData.IsDirectOverideFile; } set { _convertData.IsDirectOverideFile = value; if (value && OutputPath != InputPath) OutputPath = InputPath; else if (!value && OutputPath == InputPath) { OutputPath = string.Empty; CheckOutputPath(); } Notify("IsDirectOverideFile"); } }
         public bool IsBackupInputFile { get { return _convertData.IsBackupInputFile; } set { if (!value && !ShowConfirmMessage("你已经选择了直接覆盖源文件！\n如果选择不备份的话，将会导致源文件直接丢失！\n\n确定要不备份吗？")) { IsBackupInputFile = true; return; } _convertData.IsBackupInputFile = value; } }
+        //是否有输入的预览数据
+        public byte[]? PreviewImageBytes { get { return _previewImageBytes; } set { _previewImageBytes = value; Notify("PreviewImageBytes"); } }
         //输入图片大小
         public float InputImageSize { get { return _inputPreviewImageSize; } set { _inputPreviewImageSize = value; Notify("InputImageSize"); } }
         //输出图片大小
@@ -57,7 +59,8 @@ namespace BatchTextureModifier
         public bool StayOldFormat { get { return _stayOldFormat; } set { _stayOldFormat = value; OutputFormatIndex = value ? -1 : 0; Notify("StayOldFormat", "OutputFormatIndex"); } }
         //选择的输出格式下标
         private int _outputFormatIndex;
-        public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputEncoder = TexturesModifyUtility.GetFormatByIndex(value); Notify("IsShowQualityTextBox", "IsSupportQuality", "Quality", "IsWebp", "IsPng", "IsJpegEncoder", "WebpEncodingMethodsIndex", "PngCompressionLevelsIndex", "PngEncodingBitDepthIndex", "PngPngColorTypeIndex", "IsShowStayAlpha", "StayAlpha"); PreviewOutputImage(); } }
+        //==============！！！！输出格式！！！！=========================
+        public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputEncoder = TexturesModifyUtility.GetFormatByIndex(value); Notify("IsShowQualityTextBox", "IsSupportQuality", "Quality", "IsWebp", "IsPng", "IsJpegEncoder", "WebpEncodingMethodsIndex", "PngCompressionLevelsIndex", "PngEncodingBitDepthIndex", "PngPngColorTypeIndex", "IsShowStayAlpha", "StayAlpha", "FileSizeSetting"); PreviewOutputImage(); } }
 
         //==================图像导出设置==================
         public PngEncoderSetting PngSetting { get { return (PngEncoderSetting)TexturesModifyUtility.Encoder[0]; } }
@@ -66,6 +69,8 @@ namespace BatchTextureModifier
         public TgaEncoderSetting TgaSetting { get { return (TgaEncoderSetting)TexturesModifyUtility.Encoder[3]; } }
         public BmpEncoderSetting BmpSetting { get { return (BmpEncoderSetting)TexturesModifyUtility.Encoder[4]; } }
         public GifEncoderSetting GifSetting { get { return (GifEncoderSetting)TexturesModifyUtility.Encoder[5]; } }
+
+        public bool IsTga { get { return _convertData.OutputEncoder is TgaEncoderSetting; } }
 
         //Webp格式转换方法==========
         //private string[] _webpEncodingMethods;
@@ -103,7 +108,9 @@ namespace BatchTextureModifier
         //是否显示质量设置
         public bool IsSupportQuality { get { return (_convertData.OutputEncoder as IQualitySetting)?.IsSupportQuality ?? false; } }
         public int Quality { get { return IsSupportQuality ? ((IQualitySetting)_convertData.OutputEncoder!).Quality : -1; } set { value = Math.Clamp(value, 1, 100); ((IQualitySetting)_convertData.OutputEncoder!).Quality = value; PreviewOutputImage(); } }
-
+        //文件大小限制
+        public IFileSizeSetting? FileSizeSetting { get { return _convertData.OutputEncoder as IFileSizeSetting; } }
+        public int? FileSizeLimit { get { return FileSizeSetting?.MaxFileSize; } set { FileSizeSetting!.MaxFileSize = (int)value!; PreviewOutputImage(); } }
         //============================================
 
         //==================缩放模式==================
@@ -151,12 +158,17 @@ namespace BatchTextureModifier
         public bool HasExistInputPath { get { return Directory.Exists(InputPath); } }
         //输出目录存在
         public bool HasExistOutputPath { get { return Directory.Exists(OutputPath); } }
-        //预览图
+        //============预览图==================
+        //是否处于加载输出或输出图片中
+        private bool _isLoadingInputImage;
+        private bool _isLoadingOutputImage;
+        public bool IsLoadingInputImage { get { return _isLoadingInputImage; } set { _isLoadingInputImage = value; Notify("IsLoadingInputImage"); } }
+        public bool IsLoadingOutputImage { get { return _isLoadingOutputImage; } set { _isLoadingOutputImage = value; Notify("IsLoadingOutputImage"); } }
         private BitmapImage? _previewInputBitmap;
         public BitmapImage? PreviewInputBitmap { get { return _previewInputBitmap; } set { _previewInputBitmap = value; Notify("PreviewInputBitmap", "PreviewImageVisibility"); } }
         private BitmapImage? _previewOutputBitmap;
         public BitmapImage? PreviewOutputBitmap { get { return _previewOutputBitmap; } set { _previewOutputBitmap = value; Notify("PreviewOutputBitmap"); } }
-        public Visibility PreviewImageVisibility { get { return PreviewInputBitmap == null ? Visibility.Hidden : Visibility.Visible; } }
+        //public Visibility PreviewImageVisibility { get { return PreviewInputBitmap == null ? Visibility.Hidden : Visibility.Visible; } }
 
         //日志显示
         private System.Collections.ObjectModel.ObservableCollection<LogViewItem> _outputLogs = new System.Collections.ObjectModel.ObservableCollection<LogViewItem>();
@@ -172,7 +184,7 @@ namespace BatchTextureModifier
             //注释日志
             LogManager.GetInstance.OnLogChange += OnLogChange;
             LogManager.GetInstance.LogWarning("核心初始化...");
-            StringBuilder builder = new StringBuilder("系统信息：", 32);
+            StringBuilder builder = new StringBuilder("系统信息：", 256);
             builder.Append(Environment.OSVersion.ToString());
             builder.Append("  ");
             builder.Append(Environment.MachineName);
@@ -272,7 +284,7 @@ namespace BatchTextureModifier
         /// </summary>
         public void SaveSinglePreviewImage()
         {
-            if (_previewImageBytes == null) return;
+            if (PreviewImageBytes == null) return;
             Microsoft.Win32.SaveFileDialog fileDialog = new Microsoft.Win32.SaveFileDialog();
             //如果没有选择转换格式，则保持原图片后缀不变
             fileDialog.DefaultExt = _convertData.OutputEncoder == null ? _previewImageSuffix : TexturesModifyUtility.Filter[_outputFormatIndex];
@@ -281,7 +293,7 @@ namespace BatchTextureModifier
             {
                 try
                 {
-                    byte[] bytes = TexturesModifyUtility.ModifyTextures(_previewImageBytes, _convertData);
+                    byte[] bytes = TexturesModifyUtility.ModifyTextures(PreviewImageBytes, _convertData);
                     File.WriteAllBytes(fileDialog.FileName, bytes);
                     LogManager.GetInstance.Log("手动保存图片：" + fileDialog.FileName);
                     ShowMessage("保存成功！路径：" + fileDialog.FileName);
@@ -359,43 +371,51 @@ namespace BatchTextureModifier
             PreviewInputPathImage(TexturesModifyUtility.GetDirectoryFirstTextures(InputPath));
         }
 
+        private CancellationTokenSource? _cancellationReadInputImageTokenSource;
+        private CancellationTokenSource? _cancellationModifyOutputImageTokenSource;
         /// <summary>
         /// 给定一张图片路径，加载为预览
         /// </summary>
         /// <param name="imagePath"></param>
-        private void PreviewInputPathImage(string imagePath)
+        private async void PreviewInputPathImage(string imagePath)
         {
             LogManager.GetInstance.Log("加载预览图片：" + imagePath);
-            //清空旧图
-            _previewImageBytes = null;
+            //清空旧图数据
+            PreviewImageBytes = null;
+            //清空老图预览
+            PreviewInputBitmap = null;
+            PreviewOutputBitmap = null;
+            //InputImageSize = 0;
+            //OutputImageSize = 0;
+            //标志原图开始加载
+            IsLoadingInputImage = true;
             if (!string.IsNullOrEmpty(imagePath))
             {
                 try
                 {
-                    _previewImageBytes = File.ReadAllBytes(imagePath);
-                    InputImageSize = TexturesModifyUtility.CalcSize(_previewImageBytes);
+                    _cancellationReadInputImageTokenSource?.Cancel();
+                    _cancellationReadInputImageTokenSource = new CancellationTokenSource();
+                    PreviewImageBytes = await File.ReadAllBytesAsync(imagePath, _cancellationReadInputImageTokenSource.Token);
+                    InputImageSize = TexturesModifyUtility.CalcSize(PreviewImageBytes);
                 }
                 catch (Exception ex)
                 {
                     ShowErrorMessage(ex.Message);
                 }
             }
-            //读取失败，则清空显示
-            if (_previewImageBytes == null)
-            {
-                PreviewInputBitmap = null;
-                PreviewOutputBitmap = null;
-            }
-            else
+            //读取成功则展示
+            if (PreviewImageBytes != null)
             {
                 //存储后缀
                 _previewImageSuffix = "*" + Path.GetExtension(imagePath);
                 //加载预览的原图
-                PreviewInputBitmap = LoadImage(_previewImageBytes);
+                PreviewInputBitmap = LoadImage(PreviewImageBytes);
                 //检测并显示输出结果图
                 if (PreviewInputBitmap != null)
                     PreviewOutputImage();
             }
+            //标志原图加载完毕
+            IsLoadingInputImage = false;
         }
 
         private void CheckOutputPath()
@@ -408,20 +428,32 @@ namespace BatchTextureModifier
         /// <summary>
         /// 检测是否显示被修改后的预览图
         /// </summary>
-        private void PreviewOutputImage()
+        private async void PreviewOutputImage()
         {
-            if (_previewImageBytes == null) return;
+            PreviewOutputBitmap = null;
+            _cancellationModifyOutputImageTokenSource?.Cancel();
+            if (PreviewImageBytes == null)
+            {
+                IsLoadingOutputImage = false;
+                return;
+            }
+            IsLoadingOutputImage = true;
             byte[]? bytes = null;
             try
             {
-                bytes = TexturesModifyUtility.ModifyTextures(_previewImageBytes, _convertData);
+                _cancellationModifyOutputImageTokenSource = new CancellationTokenSource();
+                CancellationToken token = _cancellationModifyOutputImageTokenSource.Token;
+                bytes = await Task.Run(() => TexturesModifyUtility.ModifyTextures(PreviewImageBytes, _convertData), token);
+                //LogManager.GetInstance.Log($"打印 {bytes.Length}   {token.IsCancellationRequested}");
+                if (token.IsCancellationRequested) return;
                 OutputImageSize = TexturesModifyUtility.CalcSize(bytes);
             }
             catch (Exception ex)
             {
                 LogManager.GetInstance.LogError(ex.Message);
             }
-            PreviewOutputBitmap = LoadImage(bytes);
+            PreviewOutputBitmap = IsTga ? null : LoadImage(bytes);
+            IsLoadingOutputImage = false;
         }
 
         private BitmapImage? LoadImage(byte[]? texBytes)

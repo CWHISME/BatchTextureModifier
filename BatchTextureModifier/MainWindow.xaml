@@ -56,7 +56,7 @@
                                 <Grid>
                                     <TextBlock Text="单图模式下，可以仅选择一张图进行处理，点击保存按钮选择保存位置" Foreground="DarkCyan" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,20"></TextBlock>
                                     <Button Name="ChooseSingleImageBtn" Content="选择" Width="50" Height="25" VerticalAlignment="Bottom" Margin="0,0,0,10" Click="ChooseSingleImageBtn_Click"></Button>
-                                    <Button Name="SaveSingleProcessBtn" IsEnabled="{c:Binding 'PreviewOutputBitmap!=null'}" Content="保存" HorizontalAlignment="Right" VerticalAlignment="Top" Height="60" Width="100" Margin="0,10,10,10" FontSize="16" Click="SaveSingleProcessBtn_Click"/>
+                                    <Button Name="SaveSingleProcessBtn" IsEnabled="{c:Binding 'PreviewImageBytes!=null'}" Content="保存" HorizontalAlignment="Right" VerticalAlignment="Top" Height="60" Width="100" Margin="0,10,10,10" FontSize="16" Click="SaveSingleProcessBtn_Click"/>
                                 </Grid>
                             </TabItem>
                         </TabControl>
@@ -74,10 +74,19 @@
                                             </StackPanel>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                            <StackPanel Orientation="Horizontal" Visibility="{c:Binding IsSupportQuality,FalseToVisibility=Collapsed}" Height="26">
-                                                <TextBlock Text="质量：" ToolTip="{Binding LangData.QualityTips}"/>
-                                                <TextBox Width="50" Text="{Binding Quality}" AllowDrop="True"/>
-                                                <TextBlock Text="%" />
+                                            <StackPanel Orientation="Vertical">
+                                                <StackPanel Orientation="Horizontal" Visibility="{c:Binding IsSupportQuality,FalseToVisibility=Collapsed}" Height="26">
+                                                    <TextBlock Text="质量：" ToolTip="{Binding LangData.QualityTips}"/>
+                                                    <TextBox Width="50" Text="{Binding Quality}"/>
+                                                    <TextBlock Text="%" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Vertical" Visibility="{c:Binding 'FileSizeSetting!=null',FalseToVisibility=Collapsed}" Margin="0,5,0,0">
+                                                    <TextBlock Text="文件大小限制：" ToolTip="{Binding LangData.LangSizeLimit}"/>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBox Text="{Binding FileSizeLimit}" Width="80" Height="26" />
+                                                        <TextBlock Text="KB" ToolTip="{Binding LangData.LangSizeLimit}"/>
+                                                    </StackPanel>
+                                                </StackPanel>
                                             </StackPanel>
                                             <CheckBox Content="交错编码" Margin="5,0,0,0" IsChecked="{Binding JpgIsInterleaved}" Visibility="{c:Binding 'IsJpegEncoder',FalseToVisibility=Collapsed}"/>
                                             <StackPanel Orientation="Vertical" Visibility="{c:Binding IsWebp,FalseToVisibility=Collapsed}" Margin="5,0,0,0">
@@ -203,15 +212,18 @@
                                         <Image Name="PreviewOriginImage" Source="{Binding PreviewInputBitmap}" Stretch="Uniform" />
                                     </Border>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
-                                        <Label Visibility="{Binding PreviewImageVisibility}">
+                                        <Label Visibility="{c:Binding 'PreviewInputBitmap!=null',FalseToVisibility=Collapsed}">
                                             <MultiBinding  Converter="{StaticResource MultiContentConverter}" ConverterParameter="分辨率：{0}x{1}">
                                                 <Binding ElementName="PreviewOriginImage" Path="Source.PixelWidth"/>
                                                 <Binding ElementName="PreviewOriginImage" Path="Source.PixelHeight"/>
                                             </MultiBinding>
                                         </Label>
-                                        <TextBlock Text="{Binding  InputImageSize,StringFormat='({0}M)'}" Foreground="DodgerBlue"/>
+                                        <TextBlock Text="{Binding  InputImageSize,StringFormat='({0}M)'}" Visibility="{c:Binding '!IsLoadingInputImage',FalseToVisibility=Collapsed}" Foreground="DodgerBlue"/>
                                     </StackPanel>
-
+                                    <StackPanel Orientation="Vertical" Height="30" Margin="30" Visibility="{c:Binding IsLoadingInputImage,FalseToVisibility=Collapsed}">
+                                        <TextBlock Text="加载中..." TextAlignment="Center"/>
+                                        <ProgressBar  Minimum="0" Maximum="100" IsIndeterminate="True" Height="10" />
+                                    </StackPanel>
                                     <!--<Label Content="aaaaaaaaaaaa"></Label>-->
                                 </Grid>
                             </GroupBox>
@@ -223,13 +235,17 @@
                                         <Image Name="PreviewOutputImage" Source="{Binding PreviewOutputBitmap}" Stretch="Uniform" />
                                     </Border>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
-                                        <Label Visibility="{Binding PreviewImageVisibility}">
+                                        <Label Visibility="{c:Binding 'PreviewOutputBitmap!=null',FalseToVisibility=Collapsed}">
                                             <MultiBinding  Converter="{StaticResource MultiContentConverter}" ConverterParameter="分辨率：{0}x{1}">
                                                 <Binding ElementName="PreviewOutputImage" Path="Source.PixelWidth"/>
                                                 <Binding ElementName="PreviewOutputImage" Path="Source.PixelHeight"/>
                                             </MultiBinding>
                                         </Label>
-                                        <TextBlock Text="{Binding  OutputImageSize,StringFormat='({0}M)'}" Foreground="DodgerBlue"/>
+                                        <TextBlock Text="{Binding  OutputImageSize,StringFormat='({0}M)'}" Visibility="{c:Binding '!IsLoadingOutputImage',FalseToVisibility=Collapsed}" Foreground="DodgerBlue"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Vertical" Height="30" Margin="30" Visibility="{c:Binding IsLoadingOutputImage,FalseToVisibility=Collapsed}">
+                                        <TextBlock Text="加载中..." TextAlignment="Center"/>
+                                        <ProgressBar  Minimum="0" Maximum="100" IsIndeterminate="True" Height="10" />
                                     </StackPanel>
                                     <CheckBox Name="JustDisplayResultCheck" Content="仅显示结果" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,0,0" VerticalContentAlignment="Center"/>
                                     <!--</Border>-->

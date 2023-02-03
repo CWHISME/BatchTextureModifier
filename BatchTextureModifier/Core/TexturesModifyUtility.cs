@@ -120,7 +120,12 @@ namespace BatchTextureModifier
             return (float)(Math.Round(length / m, length < m ? 3 : 2));
         }
 
-        public static byte[] ModifyTextures(byte[] bytes, TexturesModifyData data)
+        public static int CalcSizeKB(long length)
+        {
+            return (int)Math.Floor(length / 1024f);
+        }
+
+        public static byte[] ModifyTextures(byte[] bytes, TexturesModifyData data, string? imageName = null)
         {
             //if (data.ScaleMode == EScaleMode.NotScale && data.OutputEncoder == null) return bytes;
             //try
@@ -184,7 +189,31 @@ namespace BatchTextureModifier
                         else image.Save(ms, GetDefaultEncoder());
                     }
                     else
-                        image.Save(ms, data.OutputEncoder.CraeteEncoder());
+                    {
+                        //判断是否限制最终文件大小
+                        IFileSizeSetting? fileSizeSetting = data.OutputEncoder as IFileSizeSetting;
+                        IImageEncoder? limitEncoder;
+                        int num = 0;
+                        do
+                        {
+                            ms.SetLength(0);
+                            limitEncoder = fileSizeSetting?.CreateFileSizeLimitEncoder(num);
+                            //已经没法处理了，或者该图格式不支持
+                            if (limitEncoder == null)
+                            {
+                                //直接用默认编码器编码
+                                limitEncoder = data.OutputEncoder.CraeteEncoder();
+                                image.Save(ms, limitEncoder);
+                                if (fileSizeSetting != null) LogManager.GetInstance.Log($"处理图片 {imageName} 过程中，为满足指定文件大小，尝试迭代了 {num} 次后依然失败！已取消限制该文件大小。");
+                                num = -1;
+                                break;
+                            }
+                            num++;
+                            image.Save(ms, limitEncoder);
+                            //文件大小不符合限制，则继续迭代
+                        } while (fileSizeSetting != null && fileSizeSetting.MaxFileSize > 1 && CalcSizeKB(ms.Length) > fileSizeSetting.MaxFileSize);
+                        if (num > 1) LogManager.GetInstance.Log($"处理图片 {imageName} 过程中，为满足指定文件大小，尝试迭代了 {num} 次后成功。");
+                    }
                     return ms.ToArray();
                 }
                 //image.Save(Path.Combine(Path.GetDirectoryName(path), "[Resize]" + Path.GetFileName(path)));
@@ -292,6 +321,7 @@ namespace BatchTextureModifier
         public static void CancelBatch()
         {
             _cancellation?.Cancel();
+            LogManager.GetInstance.LogWarning("已请求终止批处理任务...");
         }
 
         /// <summary>
@@ -362,7 +392,7 @@ namespace BatchTextureModifier
                         File.Delete(path);
                     }
                     //执行修改
-                    byte[] bytesOut = ModifyTextures(bytes, _modifyDataConfig!);
+                    byte[] bytesOut = ModifyTextures(bytes, _modifyDataConfig!, Path.GetFileName(path));
                     //处理后新文件
                     string newPath = Path.Combine(_modifyDataConfig!.OutputPath!, Path.GetFileNameWithoutExtension(path) + _modifyDataConfig.OutputEncoder?.GetFileSuffix() ?? Path.GetExtension(path));
                     File.WriteAllBytes(newPath, bytesOut);
@@ -371,7 +401,7 @@ namespace BatchTextureModifier
                 }
                 if (_cancellation.Token.IsCancellationRequested)
                 {
-                    LogManager.GetInstance.LogWarning("终止图片处理线程：" + markId);
+                    LogManager.GetInstance.Log("终止图片处理线程：" + markId);
                     return false;
                 }
                 return true;

@@ -13,7 +13,7 @@ namespace BatchTextureModifier
     /// <summary>
     /// 最新版本 ImageSharp  属性均已被标记为 init，不支持初始化意外方式修改 Encoder 了，只能新建一个 Wrap 代码。顺便封装一层操作
     /// </summary>
-    public sealed class WebpEncoderSetting : IEncoderSetting, ISupportAlphaSetting, IQualitySetting
+    public sealed class WebpEncoderSetting : IEncoderSetting, ISupportAlphaSetting, IQualitySetting, IFileSizeSetting
     {
         public WebpFileFormatType? FileFormat { get; set; } = WebpFileFormatType.Lossy;
         public int Quality { get; set; } = 100;
@@ -22,6 +22,8 @@ namespace BatchTextureModifier
         public int SpatialNoiseShaping { get; set; } = 50;
         public int FilterStrength { get; set; } = 60;
         public WebpTransparentColorMode TransparentColorMode { get; set; } = WebpTransparentColorMode.Clear;
+
+        int IFileSizeSetting.MaxFileSize { get; set; }
 
         /// <summary>
         /// 是否无损，默认有损
@@ -80,6 +82,23 @@ namespace BatchTextureModifier
         void ISupportAlphaSetting.SetAllowAlpha(bool allow)
         {
             TransparentColorMode = allow ? WebpTransparentColorMode.Preserve : WebpTransparentColorMode.Clear;
+        }
+
+        IImageEncoder? IFileSizeSetting.CreateFileSizeLimitEncoder(int tryIndex)
+        {
+            int quality = Quality - tryIndex * 5;
+            if (quality < 1) return null;
+            return new WebpEncoder()
+            {
+                FileFormat = FileFormat,
+                Quality = quality,
+                Method = Method,
+                EntropyPasses = EntropyPasses,
+                SpatialNoiseShaping = SpatialNoiseShaping,
+                FilterStrength = FilterStrength,
+                TransparentColorMode = TransparentColorMode,
+                UseAlphaCompression = false
+            };
         }
     }
 }

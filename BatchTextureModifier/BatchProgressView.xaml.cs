@@ -48,7 +48,8 @@ namespace BatchTextureModifier
 
         private void CancelBatch_Click(object sender, RoutedEventArgs e)
         {
-            if (CheckCancel()) ForceClose();
+            //if (CheckCancel()) ForceClose();
+            CheckCancel();
         }
 
         protected override void OnClosing(CancelEventArgs e)

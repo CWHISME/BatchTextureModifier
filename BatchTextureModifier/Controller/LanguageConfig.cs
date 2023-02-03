@@ -34,6 +34,7 @@ namespace BatchTextureModifier
         public string QualityTips { get { return "质量等级，范围 0~100，越高质量越好，但是文件也会更大"; } }
         public string PngFilterAlgorithmTips { get { return "会影响文件大小"; } }
         public string IsBackupWithStructureTips { get { return "备份源文件时，保持原有的目录结构，否则备份的图片会全部放在一个文件夹中"; } }
+        public string LangSizeLimit { get { return "限制处理后的最终文件大小，若生成文件大小超出限制，则尝试降低质量以满足要求\n若填写小于等于0则不限制。\n(注：可能会极大地地增加处理所消耗时长)"; } }
 
     }
 }
