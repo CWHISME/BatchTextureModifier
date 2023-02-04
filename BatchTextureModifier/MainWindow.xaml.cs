@@ -79,7 +79,6 @@ namespace BatchTextureModifier
             {
                 LogManager.GetInstance.LogError(ex.Message);
             }
-            //SyncTextures();
         }
 
         /// <summary>
@@ -87,7 +86,7 @@ namespace BatchTextureModifier
         /// </summary>
         private void ChooseInputPathBtn_Click(object sender, RoutedEventArgs e)
         {
-            _helper.SelectInputPath();// (TexturesInputPathText, PreviewInputPathImage);
+            _helper.SelectInputPath();
         }
 
         /// <summary>
@@ -95,8 +94,7 @@ namespace BatchTextureModifier
         /// </summary>
         private void ChooseOutputPathBtn_Click(object sender, RoutedEventArgs e)
         {
-            //_helper.SelectPath(TexturesOutputPathText);
-            _helper.SelectOutputtPath();
+            _helper.SelectOutputPath();
         }
 
         /// <summary>
@@ -130,34 +128,6 @@ namespace BatchTextureModifier
         {
             _helper.DisplayGitInfo();
         }
-
-        ///// <summary>
-        ///// 改变输入路径
-        ///// </summary>
-        //private void OnInputPathChange(object sender, TextChangedEventArgs e)
-        //{
-        //    ValidePath(TexturesInputPathText.Text, OpenInputPathBtn);
-        //}
-
-        ///// <summary>
-        ///// 改变输出路径
-        ///// </summary>
-        //private void OnOutputPathChange(object sender, TextChangedEventArgs e)
-        //{
-        //    ValidePath(TexturesOutputPathText.Text, OpenOutputPathBtn);
-        //}
-
-        //private void ValidePath(string path, Button effectBtn)
-        //{
-        //    if (Directory.Exists(path))
-        //    {
-        //        effectBtn.IsEnabled = true;
-        //    }
-        //    else
-        //    {
-        //        effectBtn.IsEnabled = false;
-        //    }
-        //}
 
         private void OpenInputPathBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -216,6 +186,35 @@ namespace BatchTextureModifier
                     LogManager.GetInstance.Log("删除：" + item);
                 }
             }
+        }
+
+        /// <summary>
+        /// 生成文件列表
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void DoCreateFileListBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(CreateFileListPath.Text))
+            {
+                LogManager.GetInstance.LogError("指定路径为空！");
+                return;
+            }
+            _helper.OpenSaveFileDialog("DoCreateFIleListBtn_Click", System.IO.Path.GetFileName(CreateFileListPath.Text) + "的文件列表", () =>
+            {
+                StringBuilder builder = new StringBuilder(2048);
+                foreach (var item in Directory.EnumerateFiles(CreateFileListPath.Text, "*"))
+                {
+                    builder.Append(CreateFileListPrefix.Text);
+                    builder.AppendLine(System.IO.Path.GetFileName(item));
+                }
+                return System.Text.Encoding.UTF8.GetBytes(builder.ToString());
+            }, "*.txt");
+        }
+
+        private void ChooseCreateFileListBtn_Click(object sender, RoutedEventArgs e)
+        {
+            CreateFileListPath.Text = _helper.SelectPath("ChooseCreateFileListBtn_Click");
         }
     }
 }

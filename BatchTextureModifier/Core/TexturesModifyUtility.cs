@@ -24,9 +24,14 @@ namespace BatchTextureModifier
     public static class TexturesModifyUtility
     {
         /// <summary>
-        /// 格式
+        /// 支持的格式
         /// </summary>
-        public readonly static string[] Filter = new string[] { "*.png", "*.jpg", "*.webp", "*.tga", "*.bmp", "*.gif" };
+        public readonly static string[] FormatNames = new string[] { "PNG", "JPG", "Webp", "TGA", "BMP", "GIF" };
+        /// <summary>
+        /// 支持的文件后缀
+        /// </summary>
+        public readonly static string[] Filter = new string[] { "*.png", "*.jpg", "*.jpeg", "*.webp", "*.tga", "*.bmp", "*.gif" };
+
         /// <summary>
         /// 编码器缓存
         /// </summary>

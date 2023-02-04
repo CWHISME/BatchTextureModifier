@@ -59,6 +59,18 @@
                                     <Button Name="SaveSingleProcessBtn" IsEnabled="{c:Binding 'PreviewImageBytes!=null'}" Content="保存" HorizontalAlignment="Right" VerticalAlignment="Top" Height="60" Width="100" Margin="0,10,10,10" FontSize="16" Click="SaveSingleProcessBtn_Click"/>
                                 </Grid>
                             </TabItem>
+                            <TabItem Header="其它工具">
+                                <Grid>
+                                    <DockPanel >
+                                        <TextBlock DockPanel.Dock="Left" Text="生成文件列表：" />
+                                        <Button DockPanel.Dock="Right" Content="生成" HorizontalAlignment="Left" Margin="10,0,0,0" Click="DoCreateFileListBtn_Click"/>
+                                        <Button DockPanel.Dock="Right" Content="选择" HorizontalAlignment="Left" Margin="10,0,0,0" Height="25" Click="ChooseCreateFileListBtn_Click"/>
+                                        <TextBox DockPanel.Dock="Right" Name="CreateFileListPrefix"  Width="50"  />
+                                        <TextBlock DockPanel.Dock="Right" Text="前缀：" Margin="10,0,0,0"/>
+                                        <TextBox Name="CreateFileListPath"/>
+                                    </DockPanel>
+                                </Grid>
+                            </TabItem>
                         </TabControl>
                         <GroupBox Header="参数设置" Margin="0,10,0,0">
                             <StackPanel Orientation="Horizontal">

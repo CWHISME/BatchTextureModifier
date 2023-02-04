@@ -29,8 +29,8 @@ namespace BatchTextureModifier
         private LanguageConfig _lang = new LanguageConfig();
         //预览图片
         private byte[]? _previewImageBytes;
-        //预览图片后缀
-        private string _previewImageSuffix = String.Empty;
+        //预览图片路径
+        private string _previewImagePath = String.Empty;
         //预览的图片大小缓存
         private float _inputPreviewImageSize;
         private float _outputPreviewImageSize;
@@ -53,14 +53,14 @@ namespace BatchTextureModifier
         public float OutputImageSize { get { return _outputPreviewImageSize; } set { _outputPreviewImageSize = value; Notify("OutputImageSize"); } }
 
         //输出格式列表
-        public string[] OutputFormats { get { return TexturesModifyUtility.Filter; } }
+        public string[] OutputFormats { get { return TexturesModifyUtility.FormatNames; } }
         //保留原图片格式
         private bool _stayOldFormat = true;
         public bool StayOldFormat { get { return _stayOldFormat; } set { _stayOldFormat = value; OutputFormatIndex = value ? -1 : 0; Notify("StayOldFormat", "OutputFormatIndex"); } }
         //选择的输出格式下标
         private int _outputFormatIndex;
         //==============！！！！输出格式！！！！=========================
-        public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputEncoder = TexturesModifyUtility.GetFormatByIndex(value); Notify("IsShowQualityTextBox", "IsSupportQuality", "Quality", "IsWebp", "IsPng", "IsJpegEncoder", "WebpEncodingMethodsIndex", "PngCompressionLevelsIndex", "PngEncodingBitDepthIndex", "PngPngColorTypeIndex", "IsShowStayAlpha", "StayAlpha", "FileSizeSetting"); PreviewOutputImage(); } }
+        public int OutputFormatIndex { get { return _outputFormatIndex; } set { _outputFormatIndex = value; _convertData.OutputEncoder = TexturesModifyUtility.GetFormatByIndex(value); Notify("IsShowQualityTextBox", "IsSupportQuality", "Quality", "IsWebp", "IsPng", "IsJpegEncoder", "WebpEncodingMethodsIndex", "PngCompressionLevelsIndex", "PngEncodingBitDepthIndex", "PngPngColorTypeIndex", "IsShowStayAlpha", "StayAlpha", "FileSizeSetting", "FileSizeLimit"); PreviewOutputImage(); } }
 
         //==================图像导出设置==================
         public PngEncoderSetting PngSetting { get { return (PngEncoderSetting)TexturesModifyUtility.Encoder[0]; } }
@@ -254,15 +254,15 @@ namespace BatchTextureModifier
         /// </summary>
         public void SelectInputPath()
         {
-            InputPath = SelectPath();
+            InputPath = SelectPath("SelectInputPath");
         }
 
         /// <summary>
         /// 选择输出目录
         /// </summary>
-        public void SelectOutputtPath()
+        public void SelectOutputPath()
         {
-            OutputPath = SelectPath();
+            OutputPath = SelectPath("SelectOutputtPath");
         }
 
         /// <summary>
@@ -271,10 +271,13 @@ namespace BatchTextureModifier
         public void SelectSingleImage()
         {
             Microsoft.Win32.OpenFileDialog fileDialog = new Microsoft.Win32.OpenFileDialog();
+            const string cacheId = "SelectSingleImage";
             fileDialog.DefaultExt = string.Join("|", TexturesModifyUtility.Filter);
             fileDialog.Multiselect = false;
+            fileDialog.InitialDirectory = GetDefaultOpenDirectory(cacheId);
             if (fileDialog.ShowDialog() == true)
             {
+                SetDefaultOpenDirectory(cacheId, fileDialog.FileName);
                 PreviewInputPathImage(fileDialog.FileName);
             }
         }
@@ -285,17 +288,50 @@ namespace BatchTextureModifier
         public void SaveSinglePreviewImage()
         {
             if (PreviewImageBytes == null) return;
+            //Microsoft.Win32.SaveFileDialog fileDialog = new Microsoft.Win32.SaveFileDialog();
+            ////如果没有选择转换格式，则保持原图片后缀不变
+            //fileDialog.DefaultExt = _convertData.OutputEncoder == null ? _previewImageSuffix : TexturesModifyUtility.Filter[_outputFormatIndex];
+            //fileDialog.Filter = string.Concat(fileDialog.DefaultExt, "|", fileDialog.DefaultExt);
+            //if (fileDialog.ShowDialog() == true)
+            //{
+            //    try
+            //    {
+            //        byte[] bytes = TexturesModifyUtility.ModifyTextures(PreviewImageBytes, _convertData);
+            //        File.WriteAllBytes(fileDialog.FileName, bytes);
+            //        LogManager.GetInstance.Log("手动保存图片：" + fileDialog.FileName);
+            //        ShowMessage("保存成功！路径：" + fileDialog.FileName);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        LogManager.GetInstance.LogError(ex.Message);
+            //    }
+            //}
+            OpenSaveFileDialog("SaveSinglePreviewImage", Path.GetFileNameWithoutExtension(_previewImagePath), () => TexturesModifyUtility.ModifyTextures(PreviewImageBytes, _convertData), _convertData.OutputEncoder == null ? Path.GetExtension(_previewImagePath) : TexturesModifyUtility.FormatNames[_outputFormatIndex]);
+        }
+
+        /// <summary>
+        /// 缓存的保存过文件的路径，以便后续识别
+        /// </summary>
+        private Dictionary<string, string> _pathCacheData = new Dictionary<string, string>();
+        /// <summary>
+        /// 打开一个文件保存界面，若确认则保存
+        /// </summary>
+        /// <param name="fileExt"></param>
+        /// <param name="callback"></param>
+        public void OpenSaveFileDialog(string pathCacheId, string defaultName, Func<byte[]> callback, string fileExt = "*")
+        {
             Microsoft.Win32.SaveFileDialog fileDialog = new Microsoft.Win32.SaveFileDialog();
-            //如果没有选择转换格式，则保持原图片后缀不变
-            fileDialog.DefaultExt = _convertData.OutputEncoder == null ? _previewImageSuffix : TexturesModifyUtility.Filter[_outputFormatIndex];
-            fileDialog.Filter = string.Concat(fileDialog.DefaultExt, "|", fileDialog.DefaultExt);
+            if (!fileExt.StartsWith("*"))
+                fileExt = (fileExt.StartsWith(".") ? "*" : "*.") + fileExt;
+            fileDialog.InitialDirectory = GetDefaultOpenDirectory(pathCacheId);
+            fileDialog.Filter = string.Concat(fileExt, "|*");
+            fileDialog.FileName = fileExt.Replace("*", defaultName);
             if (fileDialog.ShowDialog() == true)
             {
                 try
                 {
-                    byte[] bytes = TexturesModifyUtility.ModifyTextures(PreviewImageBytes, _convertData);
-                    File.WriteAllBytes(fileDialog.FileName, bytes);
-                    LogManager.GetInstance.Log("手动保存图片：" + fileDialog.FileName);
+                    File.WriteAllBytes(fileDialog.FileName, callback.Invoke());
+                    SetDefaultOpenDirectory(pathCacheId, fileDialog.FileName);
                     ShowMessage("保存成功！路径：" + fileDialog.FileName);
                 }
                 catch (Exception ex)
@@ -303,6 +339,7 @@ namespace BatchTextureModifier
                     LogManager.GetInstance.LogError(ex.Message);
                 }
             }
+
         }
 
         private bool _isNoneBatchProcess = true;
@@ -346,17 +383,29 @@ namespace BatchTextureModifier
         }
         #endregion
 
-        //==================Private and tools=====================
-
-        private string SelectPath()
+        public string SelectPath(string cacheId)
         {
             System.Windows.Forms.FolderBrowserDialog folderDialog = new System.Windows.Forms.FolderBrowserDialog();
+            folderDialog.InitialDirectory = GetDefaultOpenDirectory(cacheId);
             if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 DirectoryInfo info = new DirectoryInfo(folderDialog.SelectedPath);
+                SetDefaultOpenDirectory(cacheId, folderDialog.SelectedPath);
                 return folderDialog.SelectedPath;
             }
             return string.Empty;
+        }
+
+        //==================Private and tools=====================
+
+        private string GetDefaultOpenDirectory(string pathCacheId)
+        {
+            return _pathCacheData.ContainsKey(pathCacheId) ? _pathCacheData[pathCacheId] : "";
+        }
+
+        private void SetDefaultOpenDirectory(string pathCacheId, string path)
+        {
+            _pathCacheData[pathCacheId] = Path.GetDirectoryName(path)!;
         }
 
         /// <summary>
@@ -407,7 +456,8 @@ namespace BatchTextureModifier
             if (PreviewImageBytes != null)
             {
                 //存储后缀
-                _previewImageSuffix = "*" + Path.GetExtension(imagePath);
+                //_previewImageSuffix = "*" + Path.GetExtension(imagePath);
+                _previewImagePath = imagePath;
                 //加载预览的原图
                 PreviewInputBitmap = LoadImage(PreviewImageBytes);
                 //检测并显示输出结果图
