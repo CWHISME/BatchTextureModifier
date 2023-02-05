@@ -332,6 +332,7 @@ namespace BatchTextureModifier
                 {
                     File.WriteAllBytes(fileDialog.FileName, callback.Invoke());
                     SetDefaultOpenDirectory(pathCacheId, fileDialog.FileName);
+                    LogManager.GetInstance.Log("手动保存：" + fileDialog.FileName);
                     ShowMessage("保存成功！路径：" + fileDialog.FileName);
                 }
                 catch (Exception ex)
