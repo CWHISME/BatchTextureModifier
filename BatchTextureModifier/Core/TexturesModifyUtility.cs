@@ -273,12 +273,12 @@ namespace BatchTextureModifier
                 LogManager.GetInstance.LogError("当前似乎正在执行中？");
                 return;
             }
-            if (data.InputPath == null)
+            if (string.IsNullOrWhiteSpace(data.InputPath))
             {
                 LogManager.GetInstance.LogError("无输入目录！");
                 return;
             }
-            if (data.OutputPath == null && !data.IsDirectOverideFile)
+            if (string.IsNullOrWhiteSpace(data.OutputPath) && !data.IsDirectOverideFile)
             {
                 data.OutputPath = data.InputPath + "_Output";
                 if (!TryCreateDirectory(data.OutputPath)) return;
@@ -313,7 +313,8 @@ namespace BatchTextureModifier
             await Task.Run(EnumerateImagesFunc);
             _cancellation.Cancel();
             await Task.WhenAll(tasks);
-            //_cancellation.Dispose();
+            _cancellation.Dispose();
+            _pathQueue.Dispose();
             stopwatch.Stop();
             LogManager.GetInstance.LogWarning($"批处理执行完毕！共处理 {_modifyImageCount} 个 文件，消耗时间：{Math.Round(stopwatch.ElapsedMilliseconds / 1000f, 2)} 秒");
             //_onBatchEnd?.Invoke();
